@@ -43,10 +43,10 @@ class Address(Base):
     __tablename__ = "addresses"
     id = Column(Integer, primary_key=True, autoincrement=True)
     street = Column(String(100), nullable=False)
-    number = Column(String(10))
+    number = Column(String(10), nullable=False)
     complement = Column(String(50))
     neighborhood = Column(String(50))
-    city = Column(String(50), nullable=False)
+    city = Column(String(50))
     state = Column(CHAR(2), nullable=False)
     zip_code = Column(String(10), nullable=False)
     country = Column(String(50), default='Brasil')

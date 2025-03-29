@@ -46,10 +46,10 @@ CREATE TABLE Stores (
 CREATE TABLE Addresses (
     id INT NOT NULL AUTO_INCREMENT,
     street VARCHAR(100) NOT NULL,
-    number VARCHAR(10),
+    number VARCHAR(10) NOT NULL,
     complement VARCHAR(50),
     neighborhood VARCHAR(50),
-    city VARCHAR(50) NOT NULL,
+    city VARCHAR(50),
     state CHAR(2) NOT NULL,
     zip_code VARCHAR(10) NOT NULL,
     country VARCHAR(50) DEFAULT 'Brasil',
