@@ -2,16 +2,13 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import os 
-# postgresql_psw env var
 
-# Configuração do banco de dados
 credential = {'user': 'postgres',
                'password': os.environ.get('postgresql_psw')}
 DATABASE_URL = f"postgresql+psycopg2://{credential['user']}:{credential['password']}@localhost:5432/Ecommerce_OLTP"
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
-# Definição das tabelas
 class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -94,7 +91,6 @@ class Purchase(Base):
     order_date = Column(Date, nullable=False)
     created_at = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
 
-# Criando as tabelas no banco de dados
 Base.metadata.create_all(engine)
 
-print("Tabelas criadas com sucesso!")
+print("The tables has been created =D")
