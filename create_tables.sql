@@ -61,8 +61,8 @@ CREATE TABLE Store_address (
     store_id INT NOT NULL,
     address_id INT NOT NULL,
     PRIMARY KEY (store_id, address_id),
-    FOREIGN KEY (store_id) REFERENCES Stores(id),
-    FOREIGN KEY (address_id) REFERENCES Addresses(id)
+    FOREIGN KEY (store_id) REFERENCES Stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (address_id) REFERENCES Addresses(id) ON DELETE CASCADE
 );
 
 -- Customers Table
@@ -79,8 +79,8 @@ CREATE TABLE Customer_addresses (
     customer_id INT NOT NULL,
     address_id INT NOT NULL,
     PRIMARY KEY (customer_id, address_id),
-    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
-    FOREIGN KEY (address_id) REFERENCES Addresses(id)
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (address_id) REFERENCES Addresses(id) ON DELETE CASCADE
 );
 
 -- Phones Table
@@ -96,8 +96,8 @@ CREATE TABLE Phones_customers (
     phone_id INT NOT NULL,
     customer_id INT NOT NULL,
     PRIMARY KEY (phone_id, customer_id),
-    FOREIGN KEY (phone_id) REFERENCES Phones(id),
-    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+    FOREIGN KEY (phone_id) REFERENCES Phones(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) ON DELETE CASCADE
 );
 
 -- Store Phones Table
@@ -105,8 +105,8 @@ CREATE TABLE Phones_store (
     phone_id INT NOT NULL,
     store_id INT NOT NULL,
     PRIMARY KEY (phone_id, store_id),
-    FOREIGN KEY (phone_id) REFERENCES Phones(id),
-    FOREIGN KEY (store_id) REFERENCES Stores(id)
+    FOREIGN KEY (phone_id) REFERENCES Phones(id) ON DELETE CASCADE,
+    FOREIGN KEY (store_id) REFERENCES Stores(id) ON DELETE CASCADE
 );
 
 -- Purchases Table
