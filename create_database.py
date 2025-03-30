@@ -1,8 +1,9 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import os 
 from sqlalchemy.sql import func
+
 credential = {'user': 'postgres',
                'password': os.environ.get('postgresql_psw')}
 DATABASE_URL = f"postgresql+psycopg2://{credential['user']}:{credential['password']}@localhost:5432/Ecommerce_OLTP"
@@ -30,6 +31,7 @@ class Price(Base):
     item_id = Column(Integer, ForeignKey("item.id"), primary_key=True)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True)
     value = Column(Float, nullable=False)
+    __table_args__ = (CheckConstraint('value > 0', name='check_positive_price'),)
 
 class Store(Base):
     __tablename__ = "stores"
@@ -50,6 +52,10 @@ class Address(Base):
     state = Column(CHAR(2), nullable=False)
     zip_code = Column(String(10), nullable=False)
     country = Column(String(50), default='Brasil')
+    __table_args__ = (
+        CheckConstraint("state IN ('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')", name="check_valid_state"),
+        CheckConstraint("zip_code ~ '^[0-9]{5}(-?[0-9]{3})?$'", name="check_zip_code_format")
+    )
 
 class StoreAddress(Base):
     __tablename__ = "store_address"
@@ -80,6 +86,7 @@ class Phone(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     phone_type = Column(String(20))
     number = Column(String(20), nullable=False)
+    __table_args__ = (CheckConstraint("number ~ '^[0-9]+$'", name="check_phone_number_format"),)
 
 class PhoneCustomer(Base):
     __tablename__ = "phones_customers"
@@ -116,11 +123,10 @@ class PurchaseStatus(Base):
 
 class Inventory(Base):
     __tablename__ = "inventory"
-    item_id = Column(Integer, ForeignKey("item.id"), primary_key=True,nullable=False)
-    size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True,nullable=False)
-    store_id = Column(Integer, ForeignKey("stores.id"),nullable=False)
+    item_id = Column(Integer, ForeignKey("item.id"), primary_key=True, nullable=False)
+    size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True, nullable=False)
+    store_id = Column(Integer, ForeignKey("stores.id"), primary_key=True, nullable=False)
     
-
 Base.metadata.create_all(engine)
 
-print("The tables has been created =D")
+print("The tables have been created =D")

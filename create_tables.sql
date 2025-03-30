@@ -29,7 +29,7 @@ CREATE TABLE Sizes (
 CREATE TABLE Price (
     item_id INT NOT NULL,
     size_id INT NOT NULL,
-    value FLOAT NOT NULL,
+    value FLOAT NOT NULL CHECK (value > 0), -- Garante que o preço seja positivo
     PRIMARY KEY (item_id, size_id),
     FOREIGN KEY (item_id) REFERENCES Item(id),
     FOREIGN KEY (size_id) REFERENCES Sizes(id)
@@ -50,8 +50,8 @@ CREATE TABLE Addresses (
     complement VARCHAR(50),
     neighborhood VARCHAR(50),
     city VARCHAR(50),
-    state CHAR(2) NOT NULL,
-    zip_code VARCHAR(10) NOT NULL,
+    state CHAR(2) NOT NULL CHECK (state IN ('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')),
+    zip_code VARCHAR(10) NOT NULL CHECK (zip_code REGEXP '^[0-9]{5}(-?[0-9]{3})?$'),
     country VARCHAR(50) DEFAULT 'Brasil',
     PRIMARY KEY (id)
 );
@@ -87,7 +87,7 @@ CREATE TABLE Customer_addresses (
 CREATE TABLE Phones (
     id INT NOT NULL AUTO_INCREMENT,
     phone_type VARCHAR(20),
-    number VARCHAR(20) NOT NULL,
+    number VARCHAR(20) NOT NULL CHECK (number REGEXP '^[0-9]+$'), -- Only numbers
     PRIMARY KEY (id)
 );
 
@@ -122,22 +122,23 @@ CREATE TABLE Purchase (
     FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
     FOREIGN KEY (item_id, size_id) REFERENCES Price(item_id, size_id),
     FOREIGN KEY (store_id) REFERENCES Stores(id)
-)
+);
 
+-- Purchase Status Table
 CREATE TABLE Purchase_status (
     purchase_id INT NOT NULL,
     status VARCHAR(20) NOT NULL,
     PRIMARY KEY (purchase_id),
     FOREIGN KEY (purchase_id) REFERENCES Purchase(id)
-)
+);
 
+-- Inventory Table
 CREATE TABLE Inventory (
     item_id INT NOT NULL,
     size_id INT NOT NULL,
     store_id INT NOT NULL,
-    PRIMARY KEY (item_id, size_id),
+    PRIMARY KEY (item_id, size_id, store_id),
     FOREIGN KEY (item_id) REFERENCES Item(id),
     FOREIGN KEY (size_id) REFERENCES Sizes(id),
-    FOREIGN KEY (store_id) REFERENCES Store(id)
+    FOREIGN KEY (store_id) REFERENCES Stores(id)
 );
-
