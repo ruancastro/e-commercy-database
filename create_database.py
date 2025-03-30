@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import os 
-
+from sqlalchemy.sql import func
 credential = {'user': 'postgres',
                'password': os.environ.get('postgresql_psw')}
 DATABASE_URL = f"postgresql+psycopg2://{credential['user']}:{credential['password']}@localhost:5432/Ecommerce_OLTP"
@@ -63,7 +63,7 @@ class Customer(Base):
     customer_id = Column(Integer, primary_key=True, autoincrement=True)
     full_name = Column(String(50), nullable=False)
     email = Column(String(50), nullable=False)
-    created_at = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
+    created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     
     addresses = relationship("CustomerAddress", back_populates="customer", cascade="all, delete-orphan", passive_deletes=True)
     phones = relationship("PhoneCustomer", back_populates="customer", cascade="all, delete-orphan", passive_deletes=True)
@@ -103,7 +103,23 @@ class Purchase(Base):
     size_id = Column(Integer, nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
     order_date = Column(Date, nullable=False)
-    created_at = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
+    created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
+
+    status = relationship("PurchaseStatus", back_populates="purchase")
+
+class PurchaseStatus(Base):
+    __tablename__ = "purchase_status"
+    purchase_id = Column(Integer, ForeignKey("purchase.id", ondelete="CASCADE"), primary_key=True, nullable=False)
+    status = Column(String(20), nullable=False)
+    
+    purchase = relationship("Purchase", back_populates="status")
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+    item_id = Column(Integer, ForeignKey("item.id"), primary_key=True,nullable=False)
+    size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True,nullable=False)
+    store_id = Column(Integer, ForeignKey("stores.id"),nullable=False)
+    
 
 Base.metadata.create_all(engine)
 

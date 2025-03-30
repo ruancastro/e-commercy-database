@@ -122,4 +122,22 @@ CREATE TABLE Purchase (
     FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
     FOREIGN KEY (item_id, size_id) REFERENCES Price(item_id, size_id),
     FOREIGN KEY (store_id) REFERENCES Stores(id)
+)
+
+CREATE TABLE Purchase_status (
+    purchase_id INT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    PRIMARY KEY (purchase_id),
+    FOREIGN KEY (purchase_id) REFERENCES Purchase(id)
+)
+
+CREATE TABLE Inventory (
+    item_id INT NOT NULL,
+    size_id INT NOT NULL,
+    store_id INT NOT NULL,
+    PRIMARY KEY (item_id, size_id),
+    FOREIGN KEY (item_id) REFERENCES Item(id),
+    FOREIGN KEY (size_id) REFERENCES Sizes(id),
+    FOREIGN KEY (store_id) REFERENCES Store(id)
 );
+
