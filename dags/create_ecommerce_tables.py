@@ -101,8 +101,8 @@ class Purchases(Base):
     __tablename__ = "purchases"
     id = Column(Integer, primary_key=True, autoincrement=True)
     customer_id = Column(Integer, ForeignKey("customers.customer_id"), nullable=True)
-    item_id = Column(Integer, nullable=False)
-    size_id = Column(Integer, nullable=False)
+    item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
+    size_id = Column(Integer, ForeignKey("sizes.id"), nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
     order_date = Column(Date, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
