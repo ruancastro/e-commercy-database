@@ -9,6 +9,12 @@ Feito até agora:
 
 ---
 ####
+Subir o airflow 
+docker-compose up airflow-init
+docker-compose up -d
+
+
+###
 Instalar as libs extras no airflow: Dockerfile
 Criar banco de dados Ecommerce_OLTP:
 Passos para Criar e Usar o Banco Ecommerce_OLTP
@@ -33,7 +39,7 @@ Saia do psql com \q.
 
 depois de rodar a dag, para conferir se as tabelas foram criadas:
 
-docker exec -it <nome_do_container_postgres> psql -U airflow -d Ecommerce_OLTP
+docker exec -it <nome_do_container_postgres> psql -U ecommerce_oltp -d Ecommerce_OLTP
 \dt
 
 devo ver:
@@ -57,3 +63,39 @@ Schema |        Name        | Type  |     Owner
  public | stores             | table | ecommerce_oltp
 
 ####
+
+so cliente br 
+
+####
+
+Planejando a População do Banco
+Para manter a integridade do banco, você deve popular as tabelas na ordem correta, respeitando as dependências de chaves estrangeiras. Com base no seu diagrama, a ordem ideal seria:
+
+Tabelas sem FKs (ou com FKs opcionais):
+categories
+sizes
+stores
+phones
+addresses
+
+Tabelas com FKs:
+item (depende de categories)
+price (depende de item e sizes)
+inventory (depende de item, sizes e stores)
+store_address (depende de stores e addresses)
+phones_store (depende de phones e stores)
+
+Tabelas com dependências mais complexas:
+customers
+customer_addresses (depende de customers e addresses)
+phones_customers (depende de phones e customers)
+purchase (depende de customers, item, sizes e stores)
+purchase_status (depende de purchase)
+
+
+
+ALTERAR TABELA ITEM PARA ITENS!
+PRICE PRICES
+store_address Stores_addresses
+Phones_store Phones_stores
+Customer_addresses  Customers_addresses 
