@@ -38,8 +38,8 @@ class Stores(Base):
     __tablename__ = "stores"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
-    addresses = relationship("StoresAddresses", back_populates="stores", cascade="all, delete-orphan", passive_deletes=True)
-    phones = relationship("PhonesStores", back_populates="stores", cascade="all, delete-orphan", passive_deletes=True)
+    addresses = relationship("StoresAddresses", back_populates="store", cascade="all, delete-orphan", passive_deletes=True)
+    phones = relationship("PhonesStores", back_populates="store", cascade="all, delete-orphan", passive_deletes=True)
 
 class Addresses(Base):
     __tablename__ = "addresses"
@@ -69,8 +69,8 @@ class Customers(Base):
     full_name = Column(String(50), nullable=False)
     email = Column(String(50), nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
-    addresses = relationship("CustomersAddresses", back_populates="customers", cascade="all, delete-orphan", passive_deletes=True)
-    phones = relationship("PhonesCustomers", back_populates="customers", cascade="all, delete-orphan", passive_deletes=True)
+    addresses = relationship("CustomersAddresses", back_populates="customer", cascade="all, delete-orphan", passive_deletes=True)
+    phones = relationship("PhonesCustomers", back_populates="customer", cascade="all, delete-orphan", passive_deletes=True)
 
 class CustomersAddresses(Base):
     __tablename__ = "customers_addresses"
@@ -106,10 +106,10 @@ class Purchases(Base):
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
     order_date = Column(Date, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
-    status = relationship("PurchaseStatus", back_populates="purchases")
+    status = relationship("PurchaseStatus", back_populates="purchase")
 
 class PurchaseStatus(Base):
-    __tablename__ = "purchase_status"
+    __tablename__ = "purchases_status"
     purchase_id = Column(Integer, ForeignKey("purchases.id", ondelete="CASCADE"), primary_key=True, nullable=False)
     status = Column(String(20), nullable=False)
     purchase = relationship("Purchases", back_populates="status")
