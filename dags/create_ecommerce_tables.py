@@ -29,19 +29,19 @@ class Size(Base):
 
 class Prices(Base):
     __tablename__ = "prices"
-    item_id = Column(Integer, ForeignKey("item.id"), primary_key=True)
+    item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True)
     value = Column(Float, nullable=False)
     __table_args__ = (CheckConstraint('value > 0', name='check_positive_price'),)
 
-class Store(Base):
+class Stores(Base):
     __tablename__ = "stores"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
-    addresses = relationship("StoreAddress", back_populates="store", cascade="all, delete-orphan", passive_deletes=True)
-    phones = relationship("PhoneStore", back_populates="store", cascade="all, delete-orphan", passive_deletes=True)
+    addresses = relationship("StoresAddresses", back_populates="stores", cascade="all, delete-orphan", passive_deletes=True)
+    phones = relationship("PhonesStores", back_populates="stores", cascade="all, delete-orphan", passive_deletes=True)
 
-class Address(Base):
+class Addresses(Base):
     __tablename__ = "addresses"
     id = Column(Integer, primary_key=True, autoincrement=True)
     street = Column(String(100), nullable=False)
@@ -57,26 +57,26 @@ class Address(Base):
         CheckConstraint("zip_code ~ '^[0-9]{5}(-?[0-9]{3})?$'", name="check_zip_code_format")
     )
 
-class StoreAddresses(Base):
+class StoresAddresses(Base):
     __tablename__ = "stores_addresses"
     store_id = Column(Integer, ForeignKey("stores.id", ondelete="CASCADE"), primary_key=True)
     address_id = Column(Integer, ForeignKey("addresses.id"), primary_key=True)
-    store = relationship("Store", back_populates="addresses")
+    store = relationship("Stores", back_populates="addresses")
 
-class Customer(Base):
+class Customers(Base):
     __tablename__ = "customers"
     customer_id = Column(Integer, primary_key=True, autoincrement=True)
     full_name = Column(String(50), nullable=False)
     email = Column(String(50), nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
-    addresses = relationship("CustomerAddress", back_populates="customer", cascade="all, delete-orphan", passive_deletes=True)
-    phones = relationship("PhoneCustomer", back_populates="customer", cascade="all, delete-orphan", passive_deletes=True)
+    addresses = relationship("CustomersAddresses", back_populates="customers", cascade="all, delete-orphan", passive_deletes=True)
+    phones = relationship("PhonesCustomers", back_populates="customers", cascade="all, delete-orphan", passive_deletes=True)
 
-class CustomerAddresses(Base):
+class CustomersAddresses(Base):
     __tablename__ = "customers_addresses"
     customer_id = Column(Integer, ForeignKey("customers.customer_id", ondelete="CASCADE"), primary_key=True)
     address_id = Column(Integer, ForeignKey("addresses.id"), primary_key=True)
-    customer = relationship("Customer", back_populates="addresses")
+    customer = relationship("Customers", back_populates="addresses")
 
 class Phone(Base):
     __tablename__ = "phones"
@@ -85,38 +85,38 @@ class Phone(Base):
     number = Column(String(20), nullable=False)
     __table_args__ = (CheckConstraint("number ~ '^[0-9]+$'", name="check_phone_number_format"),)
 
-class PhoneCustomer(Base):
+class PhonesCustomers(Base):
     __tablename__ = "phones_customers"
     phone_id = Column(Integer, ForeignKey("phones.id", ondelete="CASCADE"), primary_key=True)
     customer_id = Column(Integer, ForeignKey("customers.customer_id", ondelete="CASCADE"), primary_key=True)
-    customer = relationship("Customer", back_populates="phones")
+    customer = relationship("Customers", back_populates="phones")
 
-class PhoneStores(Base):
+class PhonesStores(Base):
     __tablename__ = "phones_stores"
     phone_id = Column(Integer, ForeignKey("phones.id", ondelete="CASCADE"), primary_key=True)
     store_id = Column(Integer, ForeignKey("stores.id", ondelete="CASCADE"), primary_key=True)
-    store = relationship("Store", back_populates="phones")
+    store = relationship("Stores", back_populates="phones")
 
-class Purchase(Base):
-    __tablename__ = "purchase"
+class Purchases(Base):
+    __tablename__ = "purchases"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    customer_id = Column(Integer, ForeignKey("customers.customer_id"), nullable=False)
+    customer_id = Column(Integer, ForeignKey("customers.customer_id"), nullable=True)
     item_id = Column(Integer, nullable=False)
     size_id = Column(Integer, nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
     order_date = Column(Date, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
-    status = relationship("PurchaseStatus", back_populates="purchase")
+    status = relationship("PurchaseStatus", back_populates="purchases")
 
 class PurchaseStatus(Base):
     __tablename__ = "purchase_status"
-    purchase_id = Column(Integer, ForeignKey("purchase.id", ondelete="CASCADE"), primary_key=True, nullable=False)
+    purchase_id = Column(Integer, ForeignKey("purchases.id", ondelete="CASCADE"), primary_key=True, nullable=False)
     status = Column(String(20), nullable=False)
-    purchase = relationship("Purchase", back_populates="status")
+    purchase = relationship("Purchases", back_populates="status")
 
 class Inventory(Base):
     __tablename__ = "inventory"
-    item_id = Column(Integer, ForeignKey("item.id"), primary_key=True, nullable=False)
+    item_id = Column(Integer, ForeignKey("items.id"), primary_key=True, nullable=False)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True, nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), primary_key=True, nullable=False)
 
