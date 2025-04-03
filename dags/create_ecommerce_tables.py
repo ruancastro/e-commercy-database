@@ -6,13 +6,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-# Configuração do banco de dados (novo banco Ecommerce_OLTP)
+# config new database Ecommerce_OLTP
 DATABASE_URL = "postgresql+psycopg2://ecommerce_oltp:ecommerce123@postgres:5432/Ecommerce_OLTP" # Just because its a projectdoc
-# Se criou um usuário separado: "postgresql+psycopg2://ecommerce_user:ecommerce123@postgres:5432/Ecommerce_OLTP"
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
-# Definição das tabelas (mantive igual ao seu código)
 class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -122,21 +120,19 @@ class Inventory(Base):
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True, nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), primary_key=True, nullable=False)
 
-# Função para criar as tabelas
 def create_tables():
     Base.metadata.create_all(engine)
     print("The tables have been created =D")
 
-# Definição da DAG
 with DAG(
     dag_id='create_ecommerce_tables',
-    start_date=datetime(2025, 4, 2),  # Data fixa para rodar uma vez
-    schedule_interval="@once",  # Roda apenas uma vez
-    catchup=False,  # Não executa retroativamente
+    start_date=datetime(2025, 4, 2),  
+    schedule_interval="@once",  
+    catchup=False,  
 ) as dag:
     
-    # Tarefa para criar as tabelas
     create_tables_task = PythonOperator(
         task_id='create_tables',
         python_callable=create_tables,
     )
+
