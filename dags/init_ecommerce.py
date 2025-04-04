@@ -117,6 +117,29 @@ def create_initial_data():
         )
         item_ids.append(result.fetchone()[0])
 
+    
+    # --- População do Inventário (tabela "inventory") ---
+    inventory_entries = set()
+    for _ in range(100):
+        for prob in [0, 0.2, 0.4, 0.6]:  # Primeira inserção + possíveis extras
+            if prob == 0 or random.random() > prob:
+                while True: 
+                    size_id = random.choice(size_ids)
+                    store_id = random.choice(store_ids)
+                    item_id = random.choice(item_ids)
+                    entry = (item_id, size_id, store_id)
+
+                    if entry not in inventory_entries:
+                        inventory_entries.add(entry)
+                        break
+                
+                quantity = random.randint(1, 500)
+
+                session.execute(
+                    text("INSERT INTO inventory (item_id, size_id, store_id, quantity) VALUES (:item_id, :size_id, :store_id, :quantity)"),
+                    {"item_id": item_id, "size_id": size_id, "store_id": store_id, "quantity": quantity}
+                )
+
     # --- População de Preços (tabela "prices")
     # Para cada item, seleciona aleatoriamente de 1 a 4 tamanhos e insere um preço para cada combinação.
     price_entries = []
