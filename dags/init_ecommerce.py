@@ -123,7 +123,7 @@ def create_initial_data():
     inserted = 0
     attempts_without_new = 0
 
-    while inserted < 2000 and attempts_without_new < 50:
+    while inserted < 2000 and attempts_without_new < 200:
         item_id = random.choice(item_ids)
         size_id = random.choice(size_ids)
         store_id = random.choice(store_ids)
