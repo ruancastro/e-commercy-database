@@ -90,10 +90,47 @@ phones_customers (depende de phones e customers)
 purchase (depende de customers, item, sizes e stores)
 purchase_status (depende de purchase)
 
+#### 
+
+Sequencia dos containers para subir o sistema:
+1) create_ecommerce_tables
+2) init_ecommerce
+3) register_purchases_and_customers
 
 
-ALTERAR TABELA ITEM PARA ITENS!
-PRICE PRICES
-store_address Stores_addresses
-Phones_store Phones_stores
-Customer_addresses  Customers_addresses 
+
+#####
+Planejamento olap:
+- quais perguntas (KPIs) serão respondidas? 
+2. Identificando KPIs Relevantes
+KPIs (Key Performance Indicators) são métricas que refletem o desempenho do negócio. Como seu projeto simula um e-commerce/varejo, aqui estão alguns KPIs relevantes que podem ser calculados com base no seu modelo OLAP:
+
+a) KPIs de Vendas
+Vendas Totais:
+Soma de total_value em Fact_Sales.
+Exemplo: "Qual o total de vendas por loja ou categoria?"
+Número de Transações:
+Contagem de purchase_id em Fact_Sales.
+Exemplo: "Quantas compras foram feitas por mês?"
+Valor Médio do Pedido (AOV):
+Vendas Totais / Número de Transações.
+Exemplo: "Qual o valor médio das compras por cliente?"
+b) KPIs de Clientes
+Taxa de Retenção de Clientes:
+Percentual de customer_id com mais de uma compra em Fact_Sales.
+Exemplo: "Quantos clientes retornam para comprar novamente?"
+Novos Clientes Adquiridos:
+Contagem de novos customer_id em um período, baseada em created_at.
+Exemplo: "Quantos novos clientes por trimestre?"
+c) KPIs de Inventário
+Níveis de Estoque:
+Média de quantity em Fact_Inventory por loja ou item.
+Exemplo: "Qual o estoque médio por loja?"
+Taxa de Rotatividade de Estoque:
+Quantidade vendida (de Fact_Sales) / Quantidade média em estoque (de Fact_Inventory).
+Exemplo: "Com que velocidade os itens estão sendo vendidos?"
+d) KPIs Geográficos
+Vendas por Região:
+Soma de total_value agrupada por state ou city em Dim_Stores.
+Exemplo: "Quais estados geram mais vendas?"
+Esses KPIs são exemplos iniciais. Você pode ajustá-los com base no foco do seu portfólio (ex.: vendas para marketing, estoque para operações).
