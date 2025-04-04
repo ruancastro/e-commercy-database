@@ -29,52 +29,78 @@ def get_secondary_address():
         return fake.street_suffix()
 
 def register_purchases_and_customers():
+    """
+    Registers purchases and, if necessary, new customers in the e-commerce database.
+
+    This function performs the following steps:
+      1. Checks the current count of purchases and customers. If either reaches 300, no new registrations occur.
+      2. For a random number of purchase attempts (between 5 and 10):
+         - Randomly selects an item and its size from the `prices` table.
+         - Randomly selects a store from the `stores` table.
+         - Determines whether the purchase will be associated with:
+             a. No customer (customer_id is NULL),
+             b. An existing customer, or
+             c. A new customer (in which case the customer's address and, if applicable, phone are registered).
+      3. Before registering a purchase, checks if the combination of (item_id, size_id, store_id) exists in the inventory with a quantity > 0.
+         - If available, decrements the inventory quantity by 1 and registers the purchase in the `purchases` table.
+         - Otherwise, logs an "out of stock" message indicating that the combination is unavailable, and the purchase is not recorded.
+      4. Commits all changes to the database.
+
+    Returns:
+        None
+
+    Side Effects:
+        - Inserts rows into the `customers`, `addresses`, `customers_addresses`, `phones`, `phones_customers`, and `purchases` tables.
+        - Updates the `inventory` table by reducing the quantity for the matching (item_id, size_id, store_id) combination.
+        - Prints log messages indicating out-of-stock scenarios and the number of processed purchase attempts.
+    """
+
     session = Session()
 
-    # Verifica a contagem atual de compras e clientes
+    # Check current purchase and customer counts
     purchase_count = session.execute(text("SELECT COUNT(*) FROM purchases")).scalar()
     customer_count = session.execute(text("SELECT COUNT(*) FROM customers")).scalar()
 
-    # Se atingiu 300 compras ou 300 clientes, não faz mais nada
+    # If 300 purchases or 300 customers are reached, do nothing
     if purchase_count >= 300 or customer_count >= 300:
-        print("Limite atingido. Nenhuma compra ou cliente será registrado.")
+        print("Limit reached. No purchase or customer will be registered.")
         session.close()
         return
 
-    # Registra de 5 a 10 compras por execução
+    # Register between 5 and 10 purchases per execution
     num_purchases = random.randint(5, 10)
     for _ in range(num_purchases):
-        # Seleciona aleatoriamente uma combinação de item e tamanho da tabela prices
+        # Randomly select an item and size combination from prices table
         price_row = session.execute(
             text("SELECT item_id, size_id FROM prices ORDER BY RANDOM() LIMIT 1")
         ).fetchone()
         item_id, size_id = price_row
 
-        # Seleciona uma loja aleatória da tabela stores
+        # Randomly select a store from the stores table
         store_row = session.execute(
             text("SELECT id FROM stores ORDER BY RANDOM() LIMIT 1")
         ).fetchone()
         store_id = store_row[0]
 
-        # Decide se esta compra terá:
-        # 1) Nenhum cliente
-        # 2) Cliente existente
-        # 3) Novo cliente
+        # Decide if this purchase will have:
+        # 1) No customer
+        # 2) Existing customer
+        # 3) New customer
         roll = random.random()
 
         if roll < P_NO_CUSTOMER and customer_count > 0:
-            # 1) Compra sem cliente
+            # 1) Purchase without customer
             customer_id = None
 
         elif roll < (P_NO_CUSTOMER + P_EXISTING_CUSTOMER) and customer_count > 0:
-            # 2) Cliente existente
+            # 2) Existing customer
             customer_row = session.execute(
                 text("SELECT customer_id FROM customers ORDER BY RANDOM() LIMIT 1")
             ).fetchone()
             customer_id = customer_row[0]
 
         else:
-            # 3) Novo cliente (ou se não há clientes cadastrados ainda)
+            # 3) New customer (or if there are no customers yet)
             customer_data = {
                 "full_name": fake.name(),
                 "email": fake.email()
@@ -86,7 +112,7 @@ def register_purchases_and_customers():
             customer_id = customer_result.fetchone()[0]
             customer_count += 1
 
-            # Cria endereço para o novo cliente na tabela addresses
+            # Create address for the new customer in the addresses table
             address_data = {
                 "street": fake.street_name(),
                 "number": str(fake.building_number()),
@@ -109,11 +135,11 @@ def register_purchases_and_customers():
                 {"customer_id": customer_id, "address_id": address_id}
             )
 
-            # Registro do telefone do cliente na tabela phones (se aplicável)
+            # Register the customer's phone in the phones table (if applicable)
             phone_number = None if random.random() < P_NULL_PHONE else fake.numerify(text="###########")
             if phone_number:
                 phone_data = {
-                    "phone_type": "Residencial",
+                    "phone_type": "Residential",
                     "number": phone_number
                 }
                 phone_result = session.execute(
@@ -127,25 +153,51 @@ def register_purchases_and_customers():
                     {"phone_id": phone_id, "customer_id": customer_id}
                 )
 
-        # Registrar a compra na tabela purchase (customer_id pode ser NULL)
-        purchase_data = {
-            "customer_id": customer_id,
-            "item_id": item_id,
-            "size_id": size_id,
-            "store_id": store_id,
-            "order_date": datetime.now().date()
-        }
-        session.execute(
-            text("INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) "
-                 "VALUES (:customer_id, :item_id, :size_id, :store_id, :order_date)"),
-            purchase_data
-        )
+        # Check if inventory is available for the selected combination
+        inventory_row = session.execute(
+            text("""
+                SELECT quantity FROM inventory 
+                WHERE item_id = :item_id 
+                  AND size_id = :size_id 
+                  AND store_id = :store_id
+            """),
+            {"item_id": item_id, "size_id": size_id, "store_id": store_id}
+        ).fetchone()
+
+        if inventory_row and inventory_row[0] > 0:
+            # Decrement inventory quantity by 1
+            session.execute(
+                text("""
+                    UPDATE inventory 
+                    SET quantity = quantity - 1 
+                    WHERE item_id = :item_id 
+                      AND size_id = :size_id 
+                      AND store_id = :store_id
+                """),
+                {"item_id": item_id, "size_id": size_id, "store_id": store_id}
+            )
+
+            # Register the purchase in the purchases table (customer_id can be NULL)
+            purchase_data = {
+                "customer_id": customer_id,
+                "item_id": item_id,
+                "size_id": size_id,
+                "store_id": store_id,
+                "order_date": datetime.now().date()
+            }
+            session.execute(
+                text("INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) "
+                     "VALUES (:customer_id, :item_id, :size_id, :store_id, :order_date)"),
+                purchase_data
+            )
+        else:
+            # If the combination is not available in inventory, log out of stock message
+            print(f"Combination out of stock: item {item_id}, size {size_id}, store {store_id}. Purchase not registered.")
 
     session.commit()
     session.close()
-    print(f"{num_purchases} purchases registered.")
+    print(f"{num_purchases} purchase attempt(s) processed.")
 
-# Definição da DAG para execução a cada 5 minutos
 with DAG(
     dag_id='register_purchases_and_clients',
     start_date=datetime(2025, 4, 2),
