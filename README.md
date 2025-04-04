@@ -28,8 +28,6 @@ docker exec -it <nome_do_container_postgres> psql -U airflow
 (Substitua <nome_do_container_postgres> pelo nome real, geralmente algo como seu_projeto_postgres_1. Use docker ps para verificar.)
 
 CREATE DATABASE "Ecommerce_OLTP";
-(Opcional) Crie um usuário específico para maior segurança e realismo:
-sql
 
 CREATE USER ecommerce_oltp WITH PASSWORD 'ecommerce123';
 GRANT ALL PRIVILEGES ON DATABASE "Ecommerce_OLTP" TO ecommerce_oltp ;
