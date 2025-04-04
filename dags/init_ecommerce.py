@@ -120,25 +120,28 @@ def create_initial_data():
     
     # --- População do Inventário (tabela "inventory") ---
     inventory_entries = set()
-    for _ in range(100):
-        for prob in [0, 0.2, 0.4, 0.6]:  # Primeira inserção + possíveis extras
-            if prob == 0 or random.random() > prob:
-                while True: 
-                    size_id = random.choice(size_ids)
-                    store_id = random.choice(store_ids)
-                    item_id = random.choice(item_ids)
-                    entry = (item_id, size_id, store_id)
+    inserted = 0
+    attempts_without_new = 0
 
-                    if entry not in inventory_entries:
-                        inventory_entries.add(entry)
-                        break
-                
-                quantity = random.randint(1, 500)
-
-                session.execute(
-                    text("INSERT INTO inventory (item_id, size_id, store_id, quantity) VALUES (:item_id, :size_id, :store_id, :quantity)"),
-                    {"item_id": item_id, "size_id": size_id, "store_id": store_id, "quantity": quantity}
-                )
+    while inserted < 2000 and attempts_without_new < 50:
+        item_id = random.choice(item_ids)
+        size_id = random.choice(size_ids)
+        store_id = random.choice(store_ids)
+        entry = (item_id, size_id, store_id)
+        
+        if entry not in inventory_entries:
+            inventory_entries.add(entry)
+            inserted += 1
+            attempts_without_new = 0  # Reseta o contador de tentativas sem sucesso
+            
+            quantity = random.randint(1, 500)
+            session.execute(
+                text("INSERT INTO inventory (item_id, size_id, store_id, quantity) VALUES (:item_id, :size_id, :store_id, :quantity)"),
+                {"item_id": item_id, "size_id": size_id, "store_id": store_id, "quantity": quantity}
+            )
+        else:
+            # Combinação já existente: incrementa o contador de tentativas sem sucesso
+            attempts_without_new += 1
 
     # --- População de Preços (tabela "prices")
     # Para cada item, seleciona aleatoriamente de 1 a 4 tamanhos e insere um preço para cada combinação.
