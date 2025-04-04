@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import random
-
+from datetime import date
 # Configuração do banco de dados
 DATABASE_URL = "postgresql+psycopg2://airflow:airflow@postgres:5432/Ecommerce_OLTP"
 engine = create_engine(DATABASE_URL)
@@ -178,12 +178,13 @@ def register_purchases_and_customers():
             )
 
             # Register the purchase in the purchases table (customer_id can be NULL)
+            order_date = fake.date_between(start_date=date(2020, 10, 31), end_date=date.today())
             purchase_data = {
                 "customer_id": customer_id,
                 "item_id": item_id,
                 "size_id": size_id,
                 "store_id": store_id,
-                "order_date": datetime.now().date()
+                "order_date": order_date
             }
             session.execute(
                 text("INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) "
