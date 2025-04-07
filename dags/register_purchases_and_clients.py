@@ -7,7 +7,7 @@ from faker import Faker
 import random
 from datetime import date
 # Configuração do banco de dados
-DATABASE_URL = "postgresql+psycopg2://airflow:airflow@postgres:5432/Ecommerce_OLTP"
+DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"  # Just because its a project doc
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 
