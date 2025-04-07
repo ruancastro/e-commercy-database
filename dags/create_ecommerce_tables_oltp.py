@@ -125,7 +125,7 @@ class Inventory(Base):
 
 def create_tables():
     Base.metadata.create_all(engine)
-    print("The tables have been created =D")
+    print("The OLTP tables have been created =D")
 
 with DAG(
     dag_id='create_ecommerce_oltp_tables',

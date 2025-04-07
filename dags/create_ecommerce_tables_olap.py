@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-DATABASE_URL = "postgresql+psycopg2://ecommerce_oltp:ecommerce123@postgres:5432/Ecommerce_OLTP"
+DATABASE_URL = "postgresql+psycopg2://olap:ecommerce123@postgres:5432/Ecommerce_OLAP"
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
@@ -77,4 +77,18 @@ class DimCustomers(Base):
     created_at = Column(TIMESTAMP, nullable=False)
     sales = relationship("FactSales", back_populates="customer")
 
-Base.metadata.create_all(engine)
+def create_tables():
+    Base.metadata.create_all(engine)
+    print("The OLAP tables have been created =D")
+
+
+with DAG (
+    dag_id = 'create_ecommerce_olap_tables',
+    start_date = datetime(2025,4,7),
+    schedule_interval = "@once",
+    catchup = False
+) as dag:
+    create_olap_tables_task = PythonOperator(
+        task_id = "create_olap_tables",
+        python_callable = create_tables,
+    )
