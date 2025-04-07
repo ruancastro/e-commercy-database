@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, PrimaryKeyConstraint
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, PrimaryKeyConstraint, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -20,7 +20,11 @@ class FactSales(Base):
     total_value = Column(Float, nullable=False)
     quantity_sold = Column(Integer, nullable=False)
     customer = relationship("DimCustomers", back_populates="sales")
-    
+    __table_args__ = (
+        CheckConstraint('total_value >= 0', name='check_total_value_not_negative'),
+        CheckConstraint('quantity_sold >= 0', name='check_quantity_sold_not_negative'),
+    )
+
 class FactInventory(Base):
     __tablename__ = "fact_inventory"
     item_id = Column(Integer, ForeignKey('dim_items.item_id'), nullable=False)
@@ -28,7 +32,10 @@ class FactInventory(Base):
     store_id = Column(Integer, ForeignKey('dim_stores.store_id'), nullable=False)
     date_id = Column(Integer, ForeignKey('dim_time.date_id'), nullable=False)
     quantity_in_stock = Column(Integer, nullable=False)
-    __table_args__ = (PrimaryKeyConstraint('item_id', 'size_id', 'store_id', 'date_id'),)
+    __table_args__ = (
+        PrimaryKeyConstraint('item_id', 'size_id', 'store_id', 'date_id'),
+        CheckConstraint('quantity_in_stock >= 0', name='quantity_in_stock_not_negative'),
+    )
 
 class DimTime(Base):
     __tablename__ = "dim_time"
@@ -51,6 +58,10 @@ class DimStores(Base):
     city = Column(String(50))
     state = Column(CHAR(2), nullable=False)
     zip_code = Column(String(10), nullable=False)
+    __table_args__ = (
+        CheckConstraint("state IN ('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')", name="check_valid_state"),
+        CheckConstraint("zip_code ~ '^[0-9]{5}(-?[0-9]{3})?$'", name="check_zip_code_format")
+    )
 
 class DimItems(Base):
     __tablename__ = "dim_items"
