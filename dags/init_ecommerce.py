@@ -81,8 +81,19 @@ def create_initial_data():
 
     # --- População de Lojas (tabela "stores") ---
     store_ids = []
-    for _ in range(5):
-        store = {"name": f"Loja {fake.city()}"}
+    adjectives = ['Nova', 'Ideal', 'Top', 'Premium', 'Express', 'Popular', 'Central', 'Mega', 'Super', 'Prime']
+    nouns = ['Moda', 'Tec', 'Móveis', 'Eletronicos', 'Utilidades', 'Bazar', 'Games', 'Loja', 'Comercio', 'Center']
+
+    def generate_stores_names():
+        stores_names = set()
+        while len(stores_names) < 5:
+            store_name = f"{random.choice(adjectives)} {random.choice(nouns)}"
+            stores_names.add(store_name)
+        return list(stores_names)
+    
+    stores_names = generate_stores_names()
+    for name in stores_names:
+        store = {"name": f"{name}"}
         result = session.execute(
             text("INSERT INTO stores (name) VALUES (:name) RETURNING id"),
             store
@@ -105,9 +116,45 @@ def create_initial_data():
 
     # --- População de Itens (tabela "items") ---
     item_ids = []
-    for _ in range(50):  # 50 itens
+    adjetives = ['Novo', 'Duravel', 'Confortavel', 'Leve', 'Potente', 'Compacto', 'Resistente', 'Modernizado']
+    categories = [
+        'Tenis', 'Relogio', 'Fone de Ouvido', 'Cadeira Gamer', 'Notebook', 'Celular',
+        'Sofa', 'Camera', 'Churrasqueira', 'Ventilador', 'Garrafa Termica', 'Aspirador de Po',
+        'Tablet', 'Teclado', 'Mouse', 'TV', 'Monitor', 'Caixa de Som', 'Drone', 'Batedeira'
+    ]
+    materials = ['Plastico', 'Inox', 'Couro', 'Aluminio', 'Tecido', 'Metal', 'Madeira']
+    brands = ['TechLife', 'BrasilTech', 'UltraMove', 'Domestika', 'Eletrix', 'Fabrilar', 'StyleHome', 'VisionPro']
+    models = ['X200', 'Plus', 'Pro Max', 'Lite', 'Series 5', 'Mini', 'Max', 'Elite']
+
+    def generate_item_name():
+        parts = []
+        if random.random() < 0.4:
+            parts.append(random.choice(adjetives))
+        if random.random() < 0.9:
+            parts.append(random.choice(categories))
+        if random.random() < 0.5:
+            parts.append("de " + random.choice(materials))
+        if random.random() < 0.6:
+            parts.append(random.choice(brands))
+        if random.random() < 0.5:
+            parts.append(random.choice(models))
+        
+        if not parts:
+            parts.append(random.choice(categories))
+        
+        return " ".join(parts)
+    
+    def generate_items_list(qtd=50):
+        names = set()
+        while len(names) < qtd:
+            names.add(generate_item_name())
+        return list(names)
+
+    items_names = generate_items_list()
+    for name in items_names:  # 50 itens
+
         item = {
-            "name": f"{fake.word().capitalize()} {fake.word().capitalize()}",
+            "name": f"{name}",
             "category_id": random.choice(category_ids)
         }
         result = session.execute(
