@@ -23,7 +23,7 @@ Você já tem o contêiner postgres rodando no seu docker-compose.yaml. Vamos cr
 
 depois de rodar a dag, para conferir se as tabelas foram criadas:
 
-docker exec -it <nome_do_container_postgres> psql -U ecommerce_oltp -d Ecommerce_OLTP
+docker exec -it <nome_do_container_postgres> psql -U oltp -d ecommerce_oltp
 \dt
 
 devo ver:
@@ -45,7 +45,7 @@ Schema |        Name        | Type  |     Owner
  public | sizes              | table | ecommerce_oltp
  public | store_address      | table | ecommerce_oltp
  public | stores             | table | ecommerce_oltp
-
+(15 rows)
 ####
 
 so cliente br 
@@ -125,8 +125,20 @@ Esses KPIs são exemplos iniciais. Você pode ajustá-los com base no foco do se
 Criar banco OLAP:
 depois de rodar a dag, para conferir se as tabelas foram criadas:
 
-docker exec -it <nome_do_container_postgres> psql -U ecommerce_olap -d Ecommerce_OLAP
+docker exec -it <nome_do_container_postgres> psql -U olap -d ecommerce_olap
 \dt
+List of relations
+ Schema |      Name      | Type  | Owner 
+--------+----------------+-------+-------
+ public | dim_customers  | table | olap
+ public | dim_items      | table | olap
+ public | dim_sizes      | table | olap
+ public | dim_stores     | table | olap
+ public | dim_time       | table | olap
+ public | fact_inventory | table | olap
+ public | fact_sales     | table | olap
+(7 rows)
 
+-> EXPLICAR DAG ORQUESTRAÇÃO 
 
  etl para popular o olap
