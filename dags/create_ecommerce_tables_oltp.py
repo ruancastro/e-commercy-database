@@ -121,7 +121,7 @@ class Inventory(Base):
     store_id = Column(Integer, ForeignKey("stores.id"), primary_key=True, nullable=False)
     quantity = Column(Integer, nullable=False)
 
-    __table_args__ = (CheckConstraint('quantity > 0', name='check_positive_quantity'),)
+    __table_args__ = (CheckConstraint('quantity >= 0', name='check_not_negative_quantity'),)
 
 def create_tables():
     Base.metadata.create_all(engine)
