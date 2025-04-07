@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 # config new database Ecommerce_OLTP
-DATABASE_URL = "postgresql+psycopg2://ecommerce_oltp:ecommerce123@postgres:5432/Ecommerce_OLTP" # Just because its a projectdoc
+DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp" # Just because its a project doc
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
@@ -128,7 +128,7 @@ def create_tables():
     print("The tables have been created =D")
 
 with DAG(
-    dag_id='create_ecommerce_tables',
+    dag_id='create_ecommerce_oltp_tables',
     start_date=datetime(2025, 4, 2),  
     schedule_interval="@once",  
     catchup=False,  

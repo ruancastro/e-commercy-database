@@ -21,20 +21,6 @@ Passos para Criar e Usar o Banco Ecommerce_OLTP
 1. Criar o Banco no PostgreSQL
 Você já tem o contêiner postgres rodando no seu docker-compose.yaml. Vamos criar o banco Ecommerce_OLTP dentro dele:
 
-Acesse o contêiner PostgreSQL:
-bash
-
-docker exec -it <nome_do_container_postgres> psql -U airflow
-(Substitua <nome_do_container_postgres> pelo nome real, geralmente algo como seu_projeto_postgres_1. Use docker ps para verificar.)
-
-CREATE DATABASE "Ecommerce_OLTP";
-
-CREATE USER ecommerce_oltp WITH PASSWORD 'ecommerce123';
-GRANT ALL PRIVILEGES ON DATABASE "Ecommerce_OLTP" TO ecommerce_oltp ;
-Saia do psql com \q.
-
----
-
 depois de rodar a dag, para conferir se as tabelas foram criadas:
 
 docker exec -it <nome_do_container_postgres> psql -U ecommerce_oltp -d Ecommerce_OLTP
@@ -134,3 +120,13 @@ Vendas por Região:
 Soma de total_value agrupada por state ou city em Dim_Stores.
 Exemplo: "Quais estados geram mais vendas?"
 Esses KPIs são exemplos iniciais. Você pode ajustá-los com base no foco do seu portfólio (ex.: vendas para marketing, estoque para operações).
+
+####
+Criar banco OLAP:
+depois de rodar a dag, para conferir se as tabelas foram criadas:
+
+docker exec -it <nome_do_container_postgres> psql -U ecommerce_olap -d Ecommerce_OLAP
+\dt
+
+
+ etl para popular o olap
