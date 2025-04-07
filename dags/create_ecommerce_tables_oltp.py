@@ -124,6 +124,7 @@ class Inventory(Base):
     __table_args__ = (CheckConstraint('quantity >= 0', name='check_not_negative_quantity'),)
 
 def create_tables():
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     print("The OLTP tables have been created =D")
 
@@ -131,11 +132,12 @@ with DAG(
     dag_id='create_ecommerce_oltp_tables',
     start_date=datetime(2025, 4, 2),  
     schedule_interval="@once",  
-    catchup=False,  
+    catchup=False,
+    is_paused_upon_creation=False
 ) as dag:
     
-    create_tables_task = PythonOperator(
-        task_id='create_tables',
+    create_oltp_tables_task = PythonOperator(
+        task_id='create_oltp_tables',
         python_callable=create_tables,
     )
 
