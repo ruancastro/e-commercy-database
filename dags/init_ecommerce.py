@@ -6,7 +6,6 @@ from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import random
 
-# Configuração do banco de dados conforme o novo schema
 DATABASE_URL = "postgresql+psycopg2://ecommerce_oltp:ecommerce123@postgres:5432/Ecommerce_OLTP"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
