@@ -78,7 +78,7 @@ class CustomersAddresses(Base):
     address_id = Column(Integer, ForeignKey("addresses.id"), primary_key=True)
     customer = relationship("Customers", back_populates="addresses")
 
-class Phone(Base):
+class Phones(Base):
     __tablename__ = "phones"
     id = Column(Integer, primary_key=True, autoincrement=True)
     phone_type = Column(String(20))
