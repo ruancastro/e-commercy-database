@@ -83,7 +83,25 @@ class Phones(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     phone_type = Column(String(20))
     number = Column(String(20), nullable=False)
-    __table_args__ = (CheckConstraint("number ~ '^[0-9]+$'", name="check_phone_number_format"),)
+    # __table_args__ = (CheckConstraint("number ~ '^[0-9]+$'", name="check_phone_number_format"),)
+    __table_args__ = (
+        CheckConstraint(
+            r"""number ~ '^(?:\(?(
+                1[1-9]|2[1-4]|27|28|
+                3[1-8]|4[1-6]|4[7-9]|
+                5[1,3-5]|6[1-4]|6[5-7]|68|69|
+                7[1,3-5,7,9]|
+                8[1-3]|8[4-9]|
+                9[1-4]|9[5-7]|98|99
+            )\)?[-\s]?)(\d{4,5})[-\s]?(\d{4})$'""".replace("\n", "").replace(" ", ""),
+            name="check_valid_brazilian_phone_number"
+        ),
+
+        CheckConstraint(
+        "phone_type IN ('Residential', 'Mobile', 'Commercial')",
+        name="check_valid_phone_type"
+         )
+        )
 
 class PhonesCustomers(Base):
     __tablename__ = "phones_customers"
