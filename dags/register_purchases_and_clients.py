@@ -186,10 +186,29 @@ def register_purchases_and_customers():
                 "store_id": store_id,
                 "order_date": order_date
             }
-            session.execute(
-                text("INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) "
-                     "VALUES (:customer_id, :item_id, :size_id, :store_id, :order_date)"),
+
+            result = session.execute(
+                text("""
+                    INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) 
+                    VALUES (:customer_id, :item_id, :size_id, :store_id, :order_date)
+                    RETURNING id
+                """),
                 purchase_data
+            )
+
+            purchase_id = result.fetchone()[0]
+
+            purchase_status_data = {
+                'purchase_id': purchase_id,
+                'status': random.choice(['Pending', 'Sent', 'Delivered', 'Canceled'])
+            }
+
+            session.execute(
+                text("""
+                    INSERT INTO purchases_status (purchase_id, status) 
+                    VALUES (:purchase_id, :status)
+                """),
+                purchase_status_data
             )
         else:
             # If the combination is not available in inventory, log out of stock message
