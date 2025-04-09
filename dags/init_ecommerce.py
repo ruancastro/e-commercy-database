@@ -6,6 +6,8 @@ from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import random
 from utils.phone_utils import generate_random_phone_number
+from pandas import read_csv
+from os import path
 
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"  # Just because its a project doc
 engine = create_engine(DATABASE_URL)
@@ -13,7 +15,42 @@ Session = sessionmaker(bind=engine)
 
 fake = Faker('pt_BR')
 STORES_QUANTITY = 10
-ITEMS_QUANTITY = 60
+ITEMS_QUANTITY = 60 #MAX 100
+
+dag_dir = path.dirname(path.abspath(__file__))
+csv_path = path.join(dag_dir, "utils", "items_and_categories.csv")
+df_items_and_categories = read_csv(csv_path)
+
+categories = df_items_and_categories['categoria'].unique()
+
+items = df_items_and_categories['nome_item'].unique()
+items_used = items[0:ITEMS_QUANTITY]
+
+stores_names = [
+    "Estilo Total",
+    "Casa Bela",
+    "Mundo dos Livros",
+    "Tech Mania",
+    "Esporte em Alta",
+    "Conecta Shop",
+    "Leitura Certa",
+    "Decor Mix",
+    "Moda Urbana",
+    "Esporte Livre",
+    "Gadgets Pro",
+    "Universo Fashion",
+    "Casa e Conforto",
+    "Estacao Eletronica",
+    "Toque Final",
+    "Leve e Leia",
+    "Top Fit",
+    "Loja do Futuro",
+    "Trend Store",
+    "Viva Estilo"
+]
+
+stores_names_used = stores_names[0:STORES_QUANTITY]
+
 # Lista de complementos de endereço comuns no Brasil
 address_complements = [
     "Apto 101", "Casa", "Bloco A", "Sala 202", "Andar 3", "Ap 401", None, 
@@ -30,14 +67,16 @@ def create_initial_data():
     session = Session()
 
     # --- População de Categorias (tabela "categories") ---
-    category_ids = []
-    for _ in range(STORES_QUANTITY):
-        category = {"name": f"{fake.word().capitalize()} Moda"}
+    category_ids = {}
+    for category in categories:
+        
+        category = {'name': category}
         result = session.execute(
             text("INSERT INTO categories (name) VALUES (:name) RETURNING id"),
             category
         )
-        category_ids.append(result.fetchone()[0])
+        category_ids[category["name"]] = result.scalar()
+
 
     # --- População de Tamanhos (tabela "sizes") ---
     size_ids = []
@@ -80,18 +119,10 @@ def create_initial_data():
 
     # --- População de Lojas (tabela "stores") ---
     store_ids = []
-    adjectives = ['Nova', 'Ideal', 'Top', 'Premium', 'Express', 'Popular', 'Central', 'Mega', 'Super', 'Prime']
-    nouns = ['Moda', 'Tec', 'Móveis', 'Eletronicos', 'Utilidades', 'Bazar', 'Games', 'Loja', 'Comercio', 'Center']
-
-    def generate_stores_names():
-        stores_names = set()
-        while len(stores_names) < STORES_QUANTITY:
-            store_name = f"{random.choice(adjectives)} {random.choice(nouns)}"
-            stores_names.add(store_name)
-        return list(stores_names)
     
-    stores_names = generate_stores_names()
-    for name in stores_names:
+    
+
+    for name in stores_names_used:
         store = {"name": f"{name}"}
         result = session.execute(
             text("INSERT INTO stores (name) VALUES (:name) RETURNING id"),
@@ -114,52 +145,18 @@ def create_initial_data():
         )
 
     # --- População de Itens (tabela "items") ---
-    item_ids = []
-    adjetives = ['Novo', 'Duravel', 'Confortavel', 'Leve', 'Potente', 'Compacto', 'Resistente', 'Modernizado']
-    categories = [
-        'Tenis', 'Relogio', 'Fone de Ouvido', 'Cadeira Gamer', 'Notebook', 'Celular',
-        'Sofa', 'Camera', 'Churrasqueira', 'Ventilador', 'Garrafa Termica', 'Aspirador de Po',
-        'Tablet', 'Teclado', 'Mouse', 'TV', 'Monitor', 'Caixa de Som', 'Drone', 'Batedeira'
-    ]
-    materials = ['Plastico', 'Inox', 'Couro', 'Aluminio', 'Tecido', 'Metal', 'Madeira']
-    brands = ['TechLife', 'BrasilTech', 'UltraMove', 'Domestika', 'Eletrix', 'Fabrilar', 'StyleHome', 'VisionPro']
-    models = ['X200', 'Plus', 'Pro Max', 'Lite', 'Series 5', 'Mini', 'Max', 'Elite']
-
-    def generate_item_name():
-        parts = []
-        if random.random() < 0.4:
-            parts.append(random.choice(adjetives))
-        if random.random() < 0.9:
-            parts.append(random.choice(categories))
-        if random.random() < 0.5:
-            parts.append("de " + random.choice(materials))
-        if random.random() < 0.6:
-            parts.append(random.choice(brands))
-        if random.random() < 0.5:
-            parts.append(random.choice(models))
-        
-        if not parts:
-            parts.append(random.choice(categories))
-        
-        item_name = " ".join(parts)
-        if len(item_name) > ITEMS_QUANTITY:
-            return None
-        return item_name
+    def find_right_category(item:str):
+        """find right category according item name"""
+        category_name = str(df_items_and_categories[df_items_and_categories['nome_item'] == item]['categoria'].values[0])
+        return category_ids[category_name]
     
-    def generate_items_list(qtd=ITEMS_QUANTITY):
-        names = set()
-        while len(names) < qtd:
-            name = generate_item_name()
-            if name is not None and len(name) <=50:
-                names.add(generate_item_name())
-        return list(names)
-
-    items_names = generate_items_list()
-    for name in items_names:  # ITEMS_QUANTITY itens
+    
+    item_ids = []
+    for item in items_used:
 
         item = {
-            "name": f"{name}",
-            "category_id": random.choice(category_ids)
+            "name": f"{item}",
+            "category_id": find_right_category(item)
         }
         result = session.execute(
             text("INSERT INTO items (name, category_id) VALUES (:name, :category_id) RETURNING id"),
