@@ -10,7 +10,7 @@ from datetime import date
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"  # Just because its a project doc
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
-
+MAX_PURCHASES = 500
 fake = Faker('pt_BR')
 
 # Probabilidades configuráveis:
@@ -57,12 +57,11 @@ def register_purchases_and_customers():
 
     session = Session()
 
-    # Check current purchase and customer counts
+    # Check current purchase counts
     purchase_count = session.execute(text("SELECT COUNT(*) FROM purchases")).scalar()
-    customer_count = session.execute(text("SELECT COUNT(*) FROM customers")).scalar()
 
-    # If 300 purchases or 300 customers are reached, do nothing
-    if purchase_count >= 300 or customer_count >= 300:
+    # If MAX_PURCHASES purchases reached, do nothing
+    if purchase_count >= MAX_PURCHASES:
         print("Limit reached. No purchase or customer will be registered.")
         session.close()
         return
