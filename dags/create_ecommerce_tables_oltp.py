@@ -113,6 +113,7 @@ class PurchaseStatus(Base):
     purchase_id = Column(Integer, ForeignKey("purchases.id", ondelete="CASCADE"), primary_key=True, nullable=False)
     status = Column(String(20), nullable=False)
     purchase = relationship("Purchases", back_populates="status")
+    __table_args__ = (CheckConstraint("status IN ('Pending', 'Sent', 'Delivered', 'Canceled')", name='check_valid_status'),)
 
 class Inventory(Base):
     __tablename__ = "inventory"
