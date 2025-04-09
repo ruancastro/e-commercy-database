@@ -142,12 +142,17 @@ def create_initial_data():
         if not parts:
             parts.append(random.choice(categories))
         
-        return " ".join(parts)
+        item_name = " ".join(parts)
+        if len(item_name) > 50:
+            return None
+        return item_name
     
     def generate_items_list(qtd=50):
         names = set()
         while len(names) < qtd:
-            names.add(generate_item_name())
+            name = generate_item_name()
+            if name is not None:
+                names.add(generate_item_name())
         return list(names)
 
     items_names = generate_items_list()
