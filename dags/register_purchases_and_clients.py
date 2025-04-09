@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import random
 from datetime import date
+from utils.phone_utils import generate_random_phone_number
 # Configuração do banco de dados
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"  # Just because its a project doc
 engine = create_engine(DATABASE_URL)
@@ -59,6 +60,7 @@ def register_purchases_and_customers():
 
     # Check current purchase counts
     purchase_count = session.execute(text("SELECT COUNT(*) FROM purchases")).scalar()
+    customer_count = session.execute(text("SELECT COUNT(*) FROM customers")).scalar()
 
     # If MAX_PURCHASES purchases reached, do nothing
     if purchase_count >= MAX_PURCHASES:
@@ -135,15 +137,12 @@ def register_purchases_and_customers():
             )
 
             # Register the customer's phone in the phones table (if applicable)
-            phone_number = None if random.random() < P_NULL_PHONE else fake.numerify(text="###########")
-            if phone_number:
-                phone_data = {
-                    "phone_type": "Residential",
-                    "number": phone_number
-                }
+            phone_dict = None if random.random() < P_NULL_PHONE else generate_random_phone_number()
+            if phone_dict:
+                
                 phone_result = session.execute(
                     text("INSERT INTO phones (phone_type, number) VALUES (:phone_type, :number) RETURNING id"),
-                    phone_data
+                    phone_dict
                 )
                 phone_id = phone_result.fetchone()[0]
 
