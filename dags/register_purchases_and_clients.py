@@ -197,7 +197,7 @@ def register_purchases_and_customers():
             )
 
             purchase_id = result.fetchone()[0]
-
+            
             purchase_status_data = {
                 'purchase_id': purchase_id,
                 'status': random.choice(['Pending', 'Sent', 'Delivered', 'Canceled'])
@@ -221,7 +221,7 @@ def register_purchases_and_customers():
 with DAG(
     dag_id='register_purchases_and_clients',
     start_date=datetime(2025, 4, 2),
-    schedule_interval=timedelta(minutes=3),
+    schedule_interval=timedelta(minutes=2),
     catchup=False,
 ) as dag:
     register_task = PythonOperator(
