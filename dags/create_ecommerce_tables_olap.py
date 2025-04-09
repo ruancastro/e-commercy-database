@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, PrimaryKeyConstraint, CheckConstraint
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, PrimaryKeyConstraint, CheckConstraint, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -17,12 +17,14 @@ class FactSales(Base):
     size_id = Column(Integer, ForeignKey('dim_sizes.size_id'), nullable=False)
     store_id = Column(Integer, ForeignKey('dim_stores.store_id'), nullable=False)
     date_id = Column(Integer, ForeignKey('dim_time.date_id'), nullable=False)
+    purchase_status = Column(String(20),nullable=False)
     total_value = Column(Float, nullable=False)
     quantity_sold = Column(Integer, nullable=False)
     customer = relationship("DimCustomers", back_populates="sales")
     __table_args__ = (
         CheckConstraint('total_value >= 0', name='check_total_value_not_negative'),
         CheckConstraint('quantity_sold >= 0', name='check_quantity_sold_not_negative'),
+        CheckConstraint("purchase_status IN ('Pending', 'Sent', 'Delivered', 'Canceled')", name='check_valid_status'),
     )
 
 class FactInventory(Base):
@@ -45,6 +47,7 @@ class DimTime(Base):
     month = Column(Integer, nullable=False) 
     quarter = Column(Integer, nullable=False) 
     year = Column(Integer, nullable=False) 
+    is_wekend = Column(Boolean, nullable=False)
 
 class DimSizes(Base):
     __tablename__ = "dim_sizes"
@@ -57,10 +60,12 @@ class DimStores(Base):
     name = Column(String(50), nullable=False)
     city = Column(String(50))
     state = Column(CHAR(2), nullable=False)
+    region = Column(String(20), nullable=False)
     zip_code = Column(String(10), nullable=False)
     __table_args__ = (
         CheckConstraint("state IN ('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')", name="check_valid_state"),
-        CheckConstraint("zip_code ~ '^[0-9]{5}(-?[0-9]{3})?$'", name="check_zip_code_format")
+        CheckConstraint("zip_code ~ '^[0-9]{5}(-?[0-9]{3})?$'", name="check_zip_code_format"),
+        CheckConstraint("region  IN ('North', 'Northeast', 'Midwest', 'Southeast','South')", name="check_region")
     )
 
 class DimItems(Base):
@@ -68,6 +73,15 @@ class DimItems(Base):
     item_id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String(50), nullable=True)
     category_name = Column(String(50), nullable=False)
+    price_range = Column(String(30),nullable=False)
+    __table_args__ = (
+        CheckConstraint("price_range IN ('Budget','Affordable','Mid-range','Premium','Luxury')", name="check_valid_state"),
+    )
+    #     💸 Budget (e.g. $0–$50)
+    # 💰 Affordable (e.g. $51–$150)
+    # 💼 Mid-range (e.g. $151–$300)
+    # 💎 Premium (e.g. $301–$600)
+    # 👑 Luxury (e.g. $600+)
 
 class DimCustomers(Base):
     __tablename__ = "dim_customers"
@@ -76,7 +90,6 @@ class DimCustomers(Base):
     email = Column(String(50), nullable=False)
     created_at = Column(TIMESTAMP, nullable=False)
     sales = relationship("FactSales", back_populates="customer")
-
 def create_tables():
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
