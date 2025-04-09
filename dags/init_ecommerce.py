@@ -5,13 +5,15 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import random
+from utils.phone_utils import generate_random_phone_number
 
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"  # Just because its a project doc
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 
 fake = Faker('pt_BR')
-
+STORES_QUANTITY = 10
+ITEMS_QUANTITY = 60
 # Lista de complementos de endereço comuns no Brasil
 address_complements = [
     "Apto 101", "Casa", "Bloco A", "Sala 202", "Andar 3", "Ap 401", None, 
@@ -29,7 +31,7 @@ def create_initial_data():
 
     # --- População de Categorias (tabela "categories") ---
     category_ids = []
-    for _ in range(5):
+    for _ in range(STORES_QUANTITY):
         category = {"name": f"{fake.word().capitalize()} Moda"}
         result = session.execute(
             text("INSERT INTO categories (name) VALUES (:name) RETURNING id"),
@@ -48,7 +50,7 @@ def create_initial_data():
 
     # --- População de Endereços para Lojas (tabela "addresses") ---
     address_ids = []
-    for _ in range(5):  # 5 endereços, um por loja
+    for _ in range(STORES_QUANTITY):  # NUMBER_OF_STORES endereços, um por loja
         address = {
             "street": fake.street_name(),
             "number": str(fake.building_number()),
@@ -68,11 +70,8 @@ def create_initial_data():
 
     # --- População de Telefones para Lojas (tabela "phones")
     phone_ids = []
-    for _ in range(5):  # 5 telefones, um por loja
-        phone = {
-            "phone_type": "Comercial",
-            "number": fake.numerify(text="###########")
-        }
+    for _ in range(STORES_QUANTITY):  # NUMBER_OF_STORES telefones, um por loja
+        phone = generate_random_phone_number(forced_type='Commercial')
         result = session.execute(
             text("INSERT INTO phones (phone_type, number) VALUES (:phone_type, :number) RETURNING id"),
             phone
@@ -86,7 +85,7 @@ def create_initial_data():
 
     def generate_stores_names():
         stores_names = set()
-        while len(stores_names) < 5:
+        while len(stores_names) < STORES_QUANTITY:
             store_name = f"{random.choice(adjectives)} {random.choice(nouns)}"
             stores_names.add(store_name)
         return list(stores_names)
@@ -143,20 +142,20 @@ def create_initial_data():
             parts.append(random.choice(categories))
         
         item_name = " ".join(parts)
-        if len(item_name) > 50:
+        if len(item_name) > ITEMS_QUANTITY:
             return None
         return item_name
     
-    def generate_items_list(qtd=50):
+    def generate_items_list(qtd=ITEMS_QUANTITY):
         names = set()
         while len(names) < qtd:
             name = generate_item_name()
-            if name is not None:
+            if name is not None and len(name) <=50:
                 names.add(generate_item_name())
         return list(names)
 
     items_names = generate_items_list()
-    for name in items_names:  # 50 itens
+    for name in items_names:  # ITEMS_QUANTITY itens
 
         item = {
             "name": f"{name}",
