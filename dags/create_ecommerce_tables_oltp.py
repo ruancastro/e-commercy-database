@@ -19,6 +19,7 @@ csv_path = path.join(dag_dir, "utils", "items_and_categories.csv")
 # Read the CSV using pandas
 df_items_and_categories = read_csv(csv_path)
 
+# Constraint for sizes
 valid_sizes = set()
 for sizes in df_items_and_categories["tamanhos_validos"]:
     for size in sizes.split(";"):
@@ -27,10 +28,19 @@ for sizes in df_items_and_categories["tamanhos_validos"]:
 sizes_constraint = ", ".join(f"'{size}'" for size in valid_sizes)
 constraint_sizes_sql = f"size IN ({sizes_constraint})"
 
+# Constraint for categories:
+valid_categories = set(df_items_and_categories["categoria"])
+categories_constraint = ", ".join(f"'{category}'" for category in valid_categories)
+category_constraint_sql = f"name IN ({categories_constraint})"
+
 class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
+    CheckConstraint(
+            category_constraint_sql,
+            name="check_category_values"
+        ),
 
 class Items(Base):
     __tablename__ = "items"
