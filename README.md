@@ -142,3 +142,39 @@ List of relations
 -> EXPLICAR DAG ORQUESTRAÇÃO 
 
  etl para popular o olap
+
+
+Ja tem no draw io:
+    Adicionar purchase status na OLAP com as constraints 
+
+Não tem no draw io:
+    adicionar "region" na dim_stores
+    adicionar "price_range" em dim_items
+    adicionar em dim_time: 
+        is_weekend (BOOLEAN NOT NULL): Para identificar se o dia é fim de semana.
+
+
+ Ja fiz as alterações no esquema (e baixei) mas não ainda no codigo: 
+    inclusao da tabela item_sizes [x]
+    mudança em size VARCHAR(10) [x]
+    Substitua FLOAT por DECIMAL no campo value de prices para garantir precisão em cálculos financeiros. [x]
+    Considere aumentar o limite de quantity em inventory (ex.: usar BIGINT) para suportar [x]
+    
+    Adicione constraints (ex.: CHECK para validar formatos de tamanho) e índices nas colunas usadas em joins [x] frequentes para melhorar o desempenho.
+    
+    Na hora de inicializar:
+    Transforma tudo em função e importa isso para limpar o arquivo
+
+    sizes
+    categories
+
+    Como lidar com decimal? []
+    Email lojas
+    complemento -> ta um lixo
+
+    Na hora de popular:
+    Extra:
+        -Emails 
+        -Complementos ( ta randonzao)
+
+        Por que adicionar um index faz o sql rodar mais rapido?
