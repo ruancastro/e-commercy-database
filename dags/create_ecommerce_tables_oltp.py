@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, CheckConstraint
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DECIMAL, TIMESTAMP, Date, CHAR, CheckConstraint, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -25,13 +25,19 @@ class Items(Base):
 class Size(Base):
     __tablename__ = "sizes"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    size = Column(String(4), nullable=False)
+    size = Column(String(10), nullable=False)
+    
+
+class Items_sizes(Base):
+    __tablename__ = "items_sizes"
+    item_id = Column(Integer,ForeignKey("items.id"),primary_key=True)
+    size_id = Column(Integer,ForeignKey("sizes.id"),primary_key=True)
 
 class Prices(Base):
     __tablename__ = "prices"
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True)
-    value = Column(Float, nullable=False)
+    value = Column(DECIMAL, nullable=False)
     __table_args__ = (CheckConstraint('value > 0', name='check_positive_price'),)
 
 class Stores(Base):
@@ -138,7 +144,7 @@ class Inventory(Base):
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True, nullable=False)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True, nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), primary_key=True, nullable=False)
-    quantity = Column(Integer, nullable=False)
+    quantity = Column(BIGINT, nullable=False)
 
     __table_args__ = (CheckConstraint('quantity >= 0', name='check_not_negative_quantity'),)
 
