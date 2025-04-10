@@ -1,101 +1,101 @@
-nome_item,categoria
-Tenis para corrida 689,Esportes e Lazer
-Guia de viagem 498,Livros
-Vara de pesca 885,Esportes e Lazer
-Micro-ondas,Casa e Cozinha
-Relogio inteligente 788,Eletronicos
-Webcam,Eletronicos
-Tablet 518,Eletronicos
-Capacete de bicicleta,Esportes e Lazer
-Protetor solar 362,Saude e Cuidados Pessoais
-Tablet,Eletronicos
-Notebook,Eletronicos
-Halteres 787,Esportes e Lazer
-Fritadeira eletrica,Casa e Cozinha
-Livro de fantasia 809,Livros
-Ficcao historica 534,Livros
-Livro de autoajuda 718,Livros
-Cabo USB-C,Eletronicos
-Livro de autoajuda,Livros
-Romance policial 327,Livros
-Biografia,Livros
-Mouse sem fio 225,Eletronicos
-Shampoo,Saude e Cuidados Pessoais
-Halteres,Esportes e Lazer
-Garrafa de agua,Esportes e Lazer
-Fritadeira eletrica 213,Casa e Cozinha
-Cabo USB-C 444,Eletronicos
-Bola de futebol,Esportes e Lazer
-Desodorante 970,Saude e Cuidados Pessoais
-Torradeira,Casa e Cozinha
-Mouse sem fio,Eletronicos
-Caixa de som bluetooth 566,Eletronicos
-Livro infantil 551,Livros
-HD externo,Eletronicos
-Capacete de bicicleta 459,Esportes e Lazer
-Vara de pesca,Esportes e Lazer
-Elastico de resistencia,Esportes e Lazer
-Notebook 408,Eletronicos
-Mochila de trilha 679,Esportes e Lazer
-Romance policial,Livros
-Cafeteira 526,Casa e Cozinha
-Fone com cancelamento de ruido 220,Eletronicos
-HD externo 264,Eletronicos
-Barraca de camping 290,Esportes e Lazer
-Barraca de camping,Esportes e Lazer
-Guia de viagem,Livros
-Hidratante corporal,Saude e Cuidados Pessoais
-Garrafa de agua 134,Esportes e Lazer
-Bola de futebol 848,Esportes e Lazer
-Liquidificador 883,Casa e Cozinha
-Biografia 393,Livros
-Potes para armazenamento 377,Casa e Cozinha
-Micro-ondas 205,Casa e Cozinha
-Multivitaminico,Saude e Cuidados Pessoais
-Panela antiaderente,Casa e Cozinha
-Sabonete facial,Saude e Cuidados Pessoais
-Romance,Livros
-Romance 139,Livros
-Desodorante,Saude e Cuidados Pessoais
-Aparelho de barbear,Saude e Cuidados Pessoais
-Tenis para corrida,Esportes e Lazer
-Caixa de som bluetooth,Eletronicos
-Conjunto de talheres 770,Casa e Cozinha
-Escova de dente eletrica 527,Saude e Cuidados Pessoais
-Elastico de resistencia 599,Esportes e Lazer
-Multivitaminico 187,Saude e Cuidados Pessoais
-Relogio inteligente,Eletronicos
-Secador de cabelo 426,Saude e Cuidados Pessoais
-Torradeira 214,Casa e Cozinha
-Celular,Eletronicos
-Tapete de yoga,Esportes e Lazer
-Chaleira eletrica,Casa e Cozinha
-Chaleira eletrica 379,Casa e Cozinha
-Aspirador de po 766,Casa e Cozinha
-Ficcao historica,Livros
-Livro de receitas 413,Livros
-Mochila de trilha,Esportes e Lazer
-Hidratante corporal 165,Saude e Cuidados Pessoais
-Livro de ciencias,Livros
-Potes para armazenamento,Casa e Cozinha
-Condicionador,Saude e Cuidados Pessoais
-Escova de dente eletrica,Saude e Cuidados Pessoais
-Livro de fantasia,Livros
-Sabonete facial 565,Saude e Cuidados Pessoais
-Aparelho de barbear 259,Saude e Cuidados Pessoais
-Aspirador de po,Casa e Cozinha
-Celular 716,Eletronicos
-Conjunto de talheres,Casa e Cozinha
-Liquidificador,Casa e Cozinha
-Webcam 204,Eletronicos
-Livro infantil,Livros
-Panela antiaderente 214,Casa e Cozinha
-Livro de receitas,Livros
-Shampoo 781,Saude e Cuidados Pessoais
-Protetor solar,Saude e Cuidados Pessoais
-Tapete de yoga 319,Esportes e Lazer
-Condicionador 139,Saude e Cuidados Pessoais
-Secador de cabelo,Saude e Cuidados Pessoais
-Cafeteira,Casa e Cozinha
-Fone com cancelamento de ruido,Eletronicos
-Livro de ciencias 802,Livros
+nome_item,categoria,tamanhos_validos
+Tenis para corrida 689,Esportes e Lazer,36;37;38;39;40
+Guia de viagem 498,Livros,Unico
+Vara de pesca 885,Esportes e Lazer,Unico
+Micro-ondas,Casa e Cozinha,Pequeno;Medio;Grande
+Relogio inteligente 788,Eletronicos,Unico
+Webcam,Eletronicos,Unico
+Tablet 518,Eletronicos,Unico
+Capacete de bicicleta,Esportes e Lazer,Unico
+Protetor solar 362,Saude e Cuidados Pessoais,50ml;100ml;200ml
+Tablet,Eletronicos,Unico
+Notebook,Eletronicos,Unico
+Halteres 787,Esportes e Lazer,P;M;G;GG
+Fritadeira eletrica,Casa e Cozinha,Pequeno;Medio
+Livro de fantasia 809,Livros,Unico
+Ficcao historica 534,Livros,Unico
+Livro de autoajuda 718,Livros,Unico
+Cabo USB-C,Eletronicos,Unico
+Livro de autoajuda,Livros,Unico
+Romance policial 327,Livros,Unico
+Biografia,Livros,Unico
+Mouse sem fio 225,Eletronicos,Unico
+Shampoo,Saude e Cuidados Pessoais,100ml;200ml;300ml
+Halteres,Esportes e Lazer,P;M;G
+Garrafa de agua,Esportes e Lazer,Unico
+Fritadeira eletrica 213,Casa e Cozinha,Pequeno;Medio;Grande
+Cabo USB-C 444,Eletronicos,Unico
+Bola de futebol,Esportes e Lazer,Unico
+Desodorante 970,Saude e Cuidados Pessoais,Unico
+Torradeira,Casa e Cozinha,Unico
+Mouse sem fio,Eletronicos,Unico
+Caixa de som bluetooth 566,Eletronicos,Unico
+Livro infantil 551,Livros,Unico
+HD externo,Eletronicos,Unico
+Capacete de bicicleta 459,Esportes e Lazer,Unico
+Vara de pesca,Esportes e Lazer,Unico
+Elastico de resistencia,Esportes e Lazer,P;M;G
+Notebook 408,Eletronicos,Unico
+Mochila de trilha 679,Esportes e Lazer,Unico
+Romance policial,Livros,Unico
+Cafeteira 526,Casa e Cozinha,Unico
+Fone com cancelamento de ruido 220,Eletronicos,Unico
+HD externo 264,Eletronicos,Unico
+Barraca de camping 290,Esportes e Lazer,Unico
+Barraca de camping,Esportes e Lazer,Unico
+Guia de viagem,Livros,Unico
+Hidratante corporal,Saude e Cuidados Pessoais,100ml;200ml
+Garrafa de agua 134,Esportes e Lazer,Unico
+Bola de futebol 848,Esportes e Lazer,Unico
+Liquidificador 883,Casa e Cozinha,Unico
+Biografia 393,Livros,Unico
+Potes para armazenamento 377,Casa e Cozinha,Pequeno;Medio;Grande
+Micro-ondas 205,Casa e Cozinha,Pequeno;Medio
+Multivitaminico,Saude e Cuidados Pessoais,Unico
+Panela antiaderente,Casa e Cozinha,Pequeno;Medio;Grande
+Sabonete facial,Saude e Cuidados Pessoais,Unico
+Romance,Livros,Unico
+Romance 139,Livros,Unico
+Desodorante,Saude e Cuidados Pessoais,Unico
+Aparelho de barbear,Saude e Cuidados Pessoais,Unico
+Tenis para corrida,Esportes e Lazer,37;38;39;40
+Caixa de som bluetooth,Eletronicos,Unico
+Conjunto de talheres 770,Casa e Cozinha,Unico
+Escova de dente eletrica 527,Saude e Cuidados Pessoais,Unico
+Elastico de resistencia 599,Esportes e Lazer,P;M;G;GG
+Multivitaminico 187,Saude e Cuidados Pessoais,Unico
+Relogio inteligente,Eletronicos,Unico
+Secador de cabelo 426,Saude e Cuidados Pessoais,Unico
+Torradeira 214,Casa e Cozinha,Unico
+Celular,Eletronicos,Unico
+Tapete de yoga,Esportes e Lazer,Unico
+Chaleira eletrica,Casa e Cozinha,Unico
+Chaleira eletrica 379,Casa e Cozinha,Unico
+Aspirador de po 766,Casa e Cozinha,Unico
+Ficcao historica,Livros,Unico
+Livro de receitas 413,Livros,Unico
+Mochila de trilha,Esportes e Lazer,Unico
+Hidratante corporal 165,Saude e Cuidados Pessoais,50ml;100ml;200ml
+Livro de ciencias,Livros,Unico
+Potes para armazenamento,Casa e Cozinha,Pequeno;Medio
+Condicionador,Saude e Cuidados Pessoais,100ml;200ml;300ml
+Escova de dente eletrica,Saude e Cuidados Pessoais,Unico
+Livro de fantasia,Livros,Unico
+Sabonete facial 565,Saude e Cuidados Pessoais,Unico
+Aparelho de barbear 259,Saude e Cuidados Pessoais,Unico
+Aspirador de po,Casa e Cozinha,Unico
+Celular 716,Eletronicos,Unico
+Conjunto de talheres,Casa e Cozinha,Unico
+Liquidificador,Casa e Cozinha,Unico
+Webcam 204,Eletronicos,Unico
+Livro infantil,Livros,Unico
+Panela antiaderente 214,Casa e Cozinha,Pequeno;Medio;Grande
+Livro de receitas,Livros,Unico
+Shampoo 781,Saude e Cuidados Pessoais,100ml;200ml
+Protetor solar,Saude e Cuidados Pessoais,50ml;100ml
+Tapete de yoga 319,Esportes e Lazer,Unico
+Condicionador 139,Saude e Cuidados Pessoais,100ml;200ml
+Secador de cabelo,Saude e Cuidados Pessoais,Unico
+Cafeteira,Casa e Cozinha,Unico
+Fone com cancelamento de ruido,Eletronicos,Unico
+Livro de ciencias 802,Livros,Unico
