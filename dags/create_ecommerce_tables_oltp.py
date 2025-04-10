@@ -5,11 +5,27 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DECIM
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-
+from os import path
+from pandas import read_csv
 # config new database Ecommerce_OLTP
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp" # Just because its a project doc
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
+
+# Path to the CSV file
+dag_dir = path.dirname(path.abspath(__file__))
+csv_path = path.join(dag_dir, "utils", "items_and_categories.csv")
+
+# Read the CSV using pandas
+df_items_and_categories = read_csv(csv_path)
+
+valid_sizes = set()
+for sizes in df_items_and_categories["tamanhos_validos"]:
+    for size in sizes.split(";"):
+        valid_sizes.add(size)
+
+sizes_constraint = ", ".join(f"'{size}'" for size in valid_sizes)
+constraint_sizes_sql = f"size IN ({sizes_constraint})"
 
 class Category(Base):
     __tablename__ = "categories"
@@ -26,7 +42,11 @@ class Size(Base):
     __tablename__ = "sizes"
     id = Column(Integer, primary_key=True, autoincrement=True)
     size = Column(String(10), nullable=False)
-    
+    CheckConstraint(
+            constraint_sizes_sql,
+            name="check_size_values"
+        )
+
 
 class Items_sizes(Base):
     __tablename__ = "items_sizes"
