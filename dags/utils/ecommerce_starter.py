@@ -413,26 +413,26 @@ class EcommerceStarter():
                 # Combinação já existente: incrementa o contador de tentativas sem sucesso
                 attempts_without_new += 1
 
-    def populate_prices(self): # TA ERRADO
+    def populate_prices(self):
         """
-        Populates the 'prices' table with random price entries for item-size combinations.
+        Populates the 'prices' table with random price entries for valid item-size combinations.
 
-        For each item, this method randomly selects between 1 and 4 different sizes
-        and assigns a random price between 12.50 and 1940.75 for each combination.
-        
+        This method uses the valid item-size associations (e.g., from a previous populate_items_sizes
+        function or the items_sizes table) and assigns a random price between 12.50 and 1940.75 
+        for each combination.
+
         Returns:
             None
         """
+
         price_entries = []
-        for item_id in self.item_ids:
-            num_sizes = random.randint(1, 4)
-            selected_sizes = random.sample(self.size_ids, num_sizes)
-            for size_id in selected_sizes:
-                price_entries.append({
-                    "item_id": item_id,
-                    "size_id": size_id,
-                    "value": round(random.uniform(12.50, 1940.75), 2)
-                })
+        for item_id, size_id in self.items_sizes:
+            price_entries.append({
+                "item_id": item_id,
+                "size_id": size_id,
+                "value": round(random.uniform(12.50, 1940.75), 2)
+            })
+
         self.session.execute(
             text("INSERT INTO prices (item_id, size_id, value) VALUES (:item_id, :size_id, :value)"),
             price_entries
