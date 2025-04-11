@@ -66,7 +66,7 @@ class Prices(Base):
     __tablename__ = "prices"
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True)
-    value = Column(DECIMAL, nullable=False)
+    value = Column(DECIMAL(10, 2), nullable=False)
     __table_args__ = (CheckConstraint('value > 0', name='check_positive_price'),)
 
 class Stores(Base):
