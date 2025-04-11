@@ -17,10 +17,10 @@ class EcommerceStarter:
     A class responsible for initializing and populating the main tables of an e-commerce database.
 
     This class handles the creation and association of core entities such as categories, sizes,
-    addresses, phone numbers, stores, items, inventory, and pricing. It establishes a connection to the 
+    addresses, phone numbers, stores, items, inventory, and pricing. It establishes a connection to the
     database using SQLAlchemy and manages data insertion through a session object.
 
-    The quantity of data inserted can be customized using parameters like `stores_quantity` and 
+    The quantity of data inserted can be customized using parameters like `stores_quantity` and
     `items_quantity`. All reference data (such as item names and categories) is extracted from a
     CSV file provided at initialization.
 
@@ -129,17 +129,17 @@ class EcommerceStarter:
         """
         self.category_ids = self.populate_categories()
         self.size_ids = self.populate_sizes()
-        self.address_ids = self.populate_addresses_stores() 
+        self.address_ids = self.populate_addresses_stores()
         self.phone_ids = self.populate_phones_stores()
         self.store_ids = self.populate_stores()
 
         self.associate_addresses_to_stores()
         self.associate_phones_to_stores()
 
-        self.item_ids = self.populate_items()  
+        self.item_ids = self.populate_items()
         self.items_sizes = self.populate_items_sizes()
         self.populate_inventory()
-        self.populate_prices() 
+        self.populate_prices()
 
         self.session.commit()
         self.session.close()
@@ -193,7 +193,7 @@ class EcommerceStarter:
         Inserts randomly generated store addresses into the 'addresses' table and retrieves their IDs.
 
         This method generates a predefined number of fake addresses (one per store) using the 'faker' library.
-        It also uses a helper function to generate realistic Brazilian address complements. Each address is 
+        It also uses a helper function to generate realistic Brazilian address complements. Each address is
         inserted into the database using a parameterized query, and the assigned ID is collected.
 
         Returns:
@@ -226,7 +226,7 @@ class EcommerceStarter:
         Inserts randomly generated store phone numbers into the 'phones' table and retrieves their IDs.
 
         This method generates a predefined number of commercial phone numbers (one per store) using the
-        'generate_random_phone_number' function. Each phone number is inserted into the database using a 
+        'generate_random_phone_number' function. Each phone number is inserted into the database using a
         parameterized query, and the corresponding ID is collected.
 
         Returns:
@@ -249,7 +249,7 @@ class EcommerceStarter:
         Inserts predefined store names and generated emails into the 'stores' table and retrieves their IDs.
 
         This method iterates through a list of predefined store names, generates an email address for each store
-        using the 'generate_store_email' function, and inserts the name and email into the database using a 
+        using the 'generate_store_email' function, and inserts the name and email into the database using a
         parameterized SQL query. The ID of each inserted store is then collected.
 
         Returns:
