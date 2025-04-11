@@ -8,6 +8,7 @@ import random
 from utils.phone_utils import generate_random_phone_number
 from os import path
 import pandas as pd
+from utils.brazilian_address_complement import generate_brazilian_address_complement
 
 class EcommerceStarter():
     """
@@ -29,7 +30,6 @@ class EcommerceStarter():
         items (list): List of item names to be inserted into the database.
         valid_sizes (list): List of valid sizes to be stored in the sizes table.
         stores_names (list): List of possible store names.
-        address_complements (list): List of optional address complements.
         items_used (list): Subset of items to be used based on `items_quantity`.
         stores_names_used (list): Subset of store names based on `stores_quantity`.
         category_ids (dict): Maps category names to their corresponding IDs after insertion.
@@ -47,7 +47,6 @@ class EcommerceStarter():
         items (list): List of all possible item names.
         valid_sizes (list): List of valid size strings (e.g., 'S', 'M', 'L').
         stores_names (list): List of potential store names to be used.
-        address_complements (list): Optional complements to be randomly assigned to addresses.
     """
     
     def __init__(self,DATABASE_URL,path_root_csv,stores_quantity,items_quantity,):
@@ -89,18 +88,6 @@ class EcommerceStarter():
                     "Viva Estilo"
                 ]
         
-        self.address_complements =  [
-            "Apto 101", "Casa", "Bloco A", "Sala 202", "Andar 3", "Ap 401", None, 
-            "Bloco B", "Cobertura", "Térreo", "Andar 5", "Sala 305", "Ap 502", None, 
-            "Bloco C", "Loja 10", "Andar 7", "Sala 102", "Apto 203", None, 
-            "Galpão 1", "Andar 2", "Bloco D", "Sala 408", "Ap 601", None, 
-            "Conjunto 15", "Torre 1", "Andar 9", "Sala 207", "Apto 705", None, 
-            "Bloco E", "Sobreloja", "Sala 501", "Andar 4", "Apto 801", None, 
-            "Torre 2", "Sala 303", "Andar 6", "Ap 904", "Bloco F", None, 
-            "Piso Superior", "Loja 5", "Andar 10", "Sala 605", "Apto 1002", None
-        ] # um lixo
-        
-
         self.engine = create_engine(DATABASE_URL)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
@@ -202,7 +189,7 @@ class EcommerceStarter():
             address = {
                 "street": self.fake.street_name(),
                 "number": str(self.fake.building_number()),
-                "complement": random.choice(self.address_complements) if random.random() >= 0.3 else None,
+                "complement": generate_brazilian_address_complement(),
                 "neighborhood": self.fake.bairro(),
                 "city": self.fake.city(),
                 "state": self.fake.estado_sigla(),
