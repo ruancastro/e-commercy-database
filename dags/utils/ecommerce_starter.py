@@ -100,10 +100,11 @@ class EcommerceStarter():
             "Piso Superior", "Loja 5", "Andar 10", "Sala 605", "Apto 1002", None
         ] # um lixo
         
-        self.items_sizes = [{'item':row.nome_item, 'valid_sizes':row.tamanhos_validos} for row in self.root_df.itertuples() ]
 
         self.engine = create_engine(DATABASE_URL)
-        self.session = sessionmaker(bind=self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
+
         
         self.stores_quantity = stores_quantity
         self.items_quantity = items_quantity
@@ -121,6 +122,7 @@ class EcommerceStarter():
         self.stores_names_used = self.stores_names[0:self.stores_quantity]
 
         self.fake = Faker('pt_BR')
+ 
     def create_initial_data(self):
         self.category_ids = self.populate_categories()
         self.size_ids = self.populate_sizes() #self.valid_sizes
@@ -132,7 +134,7 @@ class EcommerceStarter():
         self.associate_phones_to_stores()
 
         self.item_ids = self.populate_items() # self.items_used
-        
+        self.items_sizes = self.populate_items_sizes()
         self.populate_inventory()
         self.populate_prices() # TA ERRADO
 
@@ -152,7 +154,6 @@ class EcommerceStarter():
             dict: A dictionary where each key is a category name and each value is the corresponding ID
                 returned by the database.
         """
-
 
         category_ids = {}
         for category in self.categories:
@@ -330,10 +331,50 @@ class EcommerceStarter():
         return item_ids
     
     def populate_items_sizes(self):
-        items_and_ids = zip(self.items,self.item_ids)
-        sizes_and_ids = zip(self.valid_sizes,self.size_ids)
+        """
+        Inserts valid item-size associations into the 'items_sizes' table.
 
+        This method filters items from the CSV that are present in self.items_used, maps item names and sizes 
+        to their respective IDs, and inserts the associations into the 'items_sizes' table.
 
+        Returns:
+            list: A list of tuples (item_id, size_id) representing the inserted associations.
+        """
+        # Create dictionaries for quick lookup
+        item_id_map = dict(zip(self.items_used, self.item_ids))  # Maps item name to item_id
+        size_id_map = dict(zip(self.valid_sizes, self.size_ids))  # Maps size to size_id
+
+        # List to store the inserted (item_id, size_id) pairs
+        inserted_pairs = []
+
+        # Filter the DataFrame to include only items in self.items_used
+        df_filtered = self.root_df[self.root_df['nome_item'].isin(self.items_used)]
+
+        # Iterate over each row in the filtered DataFrame
+        for _, row in df_filtered.iterrows():
+            item_name = row['nome_item']
+            valid_sizes_str = row['tamanhos_validos']
+
+            # Get the item_id for the current item
+            item_id = item_id_map[item_name]
+
+            # Split the valid sizes (semicolon-separated)
+            valid_sizes = valid_sizes_str.split(';')
+
+            # Insert each valid size association into the items_sizes table
+            for size in valid_sizes:
+                size_id = size_id_map[size]
+                item_size = {
+                    "item_id": item_id,
+                    "size_id": size_id
+                }
+                self.session.execute(
+                    text("INSERT INTO items_sizes (item_id, size_id) VALUES (:item_id, :size_id)"),
+                    item_size
+                )
+                inserted_pairs.append((item_id, size_id))
+
+        return inserted_pairs
 
     def populate_inventory(self):
         """
