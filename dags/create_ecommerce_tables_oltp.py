@@ -73,6 +73,8 @@ class Stores(Base):
     __tablename__ = "stores"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
+    email = Column(String(50), nullable=False)
+    
     addresses = relationship("StoresAddresses", back_populates="store", cascade="all, delete-orphan", passive_deletes=True)
     phones = relationship("PhonesStores", back_populates="store", cascade="all, delete-orphan", passive_deletes=True)
 
