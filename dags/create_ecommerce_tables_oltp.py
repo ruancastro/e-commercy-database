@@ -57,7 +57,6 @@ class Size(Base):
             name="check_size_values"
         )
 
-
 class Items_sizes(Base):
     __tablename__ = "items_sizes"
     item_id = Column(Integer,ForeignKey("items.id"),primary_key=True)
