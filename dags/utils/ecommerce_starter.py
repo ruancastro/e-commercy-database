@@ -9,7 +9,7 @@ from utils.phone_utils import generate_random_phone_number
 from os import path
 import pandas as pd
 from utils.brazilian_address_complement import generate_brazilian_address_complement
-
+from utils.store_email import generate_store_email
 class EcommerceStarter():
     """
     A class responsible for initializing and populating the main tables of an e-commerce database.
@@ -237,9 +237,9 @@ class EcommerceStarter():
         """
         store_ids = []
         for name in self.stores_names_used:
-            store = {"name": f"{name}"}
+            store = {"name": f"{name}", "email": f"{generate_store_email(name)}"}
             result = self.session.execute(
-                text("INSERT INTO stores (name) VALUES (:name) RETURNING id"),
+                text("INSERT INTO stores (name, email) VALUES (:name, :email) RETURNING id"),
                 store
             )
             store_ids.append(result.fetchone()[0])
