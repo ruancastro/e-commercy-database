@@ -1,158 +1,126 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import random
-from datetime import date
 from utils.phone_utils import generate_random_phone_number
-# Configuração do banco de dados
-DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"  # Just because its a project doc
+from utils.customer_email import generate_customer_email
+from utils.brazilian_address_complement import generate_brazilian_address_complement
+
+# Database configuration
+DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 MAX_PURCHASES = 500
 fake = Faker('pt_BR')
 
-# Probabilidades configuráveis:
-P_NO_CUSTOMER = 0.3       # Chance de não haver cliente (purchase com customer_id = NULL)
-P_EXISTING_CUSTOMER = 0.3 # Chance de usar cliente existente
-P_NEW_CUSTOMER = 0.4      # Chance de criar novo cliente
-# Probabilidades de campos nulos
-P_NULL_COMPLEMENT = 0.3   # Chance do campo 'complement' ser NULL
-P_NULL_PHONE = 0.2        # Chance do telefone ser NULL
+# Configurable probabilities
+P_NO_CUSTOMER = 0.3       # Chance of no customer (purchase with customer_id = NULL)
+P_EXISTING_CUSTOMER = 0.3 # Chance of using an existing customer
+P_NEW_CUSTOMER = 0.4      # Chance of creating a new customer
+P_NULL_COMPLEMENT = 0.3   # Chance of the 'complement' field being NULL
+P_NULL_PHONE = 0.2        # Chance of the phone being NULL
 
-def get_secondary_address():
-    """Retorna secondary_address se disponível, senão usa street_suffix como alternativa."""
-    if hasattr(fake, 'secondary_address'):
-        return fake.secondary_address()
-    else:
-        return fake.street_suffix()
-
-def register_purchases_and_customers():
+class Customer:
     """
-    Registers purchases and, if necessary, new customers in the e-commerce database.
-
-    This function performs the following steps:
-      1. Checks the current count of purchases and customers. If either reaches 300, no new registrations occur.
-      2. For a random number of purchase attempts (between 5 and 10):
-         - Randomly selects an item and its size from the `prices` table.
-         - Randomly selects a store from the `stores` table.
-         - Determines whether the purchase will be associated with:
-             a. No customer (customer_id is NULL),
-             b. An existing customer, or
-             c. A new customer (in which case the customer's address and, if applicable, phone are registered).
-      3. Before registering a purchase, checks if the combination of (item_id, size_id, store_id) exists in the inventory with a quantity > 0.
-         - If available, decrements the inventory quantity by 1 and registers the purchase in the `purchases` table.
-         - Otherwise, logs an "out of stock" message indicating that the combination is unavailable, and the purchase is not recorded.
-      4. Commits all changes to the database.
-
-    Returns:
-        None
-
-    Side Effects:
-        - Inserts rows into the `customers`, `addresses`, `customers_addresses`, `phones`, `phones_customers`, and `purchases` tables.
-        - Updates the `inventory` table by reducing the quantity for the matching (item_id, size_id, store_id) combination.
-        - Prints log messages indicating out-of-stock scenarios and the number of processed purchase attempts.
+    Class responsible for operations related to customers, such as creating new customers with addresses and phones.
     """
+    
+    def __init__(self, session):
+        self.session = session
 
-    session = Session()
+    def create_new_customer(self):
+        """
+        Creates a new customer, including their address and phone (if applicable).
 
-    # Check current purchase counts
-    purchase_count = session.execute(text("SELECT COUNT(*) FROM purchases")).scalar()
-    customer_count = session.execute(text("SELECT COUNT(*) FROM customers")).scalar()
+        Returns:
+            int: The ID of the newly created customer.
+        """
+        full_name = fake.name()
+        customer_data = {
+            "full_name": full_name,
+            "email": generate_customer_email(full_name)
+        }
+        customer_result = self.session.execute(
+            text("INSERT INTO customers (full_name, email) VALUES (:full_name, :email) RETURNING customer_id"),
+            customer_data
+        )
+        customer_id = customer_result.fetchone()[0]
 
-    # If MAX_PURCHASES purchases reached, do nothing
-    if purchase_count >= MAX_PURCHASES:
-        print("Limit reached. No purchase or customer will be registered.")
-        session.close()
-        return
+        # Create an address for the new customer
+        address_data = {
+            "street": fake.street_name(),
+            "number": str(fake.building_number()),
+            "complement": None if random.random() < P_NULL_COMPLEMENT else generate_brazilian_address_complement(),
+            "neighborhood": fake.bairro(),
+            "city": fake.city(),
+            "state": fake.estado_sigla(),
+            "zip_code": fake.postcode(),
+            "country": "Brasil"
+        }
+        address_result = self.session.execute(
+            text("INSERT INTO addresses (street, number, complement, neighborhood, city, state, zip_code, country) "
+                 "VALUES (:street, :number, :complement, :neighborhood, :city, :state, :zip_code, :country) RETURNING id"),
+            address_data
+        )
+        address_id = address_result.fetchone()[0]
 
-    # Register between 5 and 10 purchases per execution
-    num_purchases = random.randint(5, 10)
-    for _ in range(num_purchases):
-        # Randomly select an item and size combination from prices table
-        price_row = session.execute(
-            text("SELECT item_id, size_id FROM prices ORDER BY RANDOM() LIMIT 1")
+        self.session.execute(
+            text("INSERT INTO customers_addresses (customer_id, address_id) VALUES (:customer_id, :address_id)"),
+            {"customer_id": customer_id, "address_id": address_id}
+        )
+
+        # Register the customer's phone (if applicable)
+        if random.random() >= P_NULL_PHONE:
+            phone_dict = generate_random_phone_number()
+            phone_result = self.session.execute(
+                text("INSERT INTO phones (phone_type, number) VALUES (:phone_type, :number) RETURNING id"),
+                phone_dict
+            )
+            phone_id = phone_result.fetchone()[0]
+
+            self.session.execute(
+                text("INSERT INTO phones_customers (phone_id, customer_id) VALUES (:phone_id, :customer_id)"),
+                {"phone_id": phone_id, "customer_id": customer_id}
+            )
+
+        return customer_id
+
+    def get_random_existing_customer(self):
+        """
+        Retrieves the ID of a random existing customer from the database.
+
+        Returns:
+            int or None: The ID of a random customer, or None if no customers exist.
+        """
+        customer_row = self.session.execute(
+            text("SELECT customer_id FROM customers ORDER BY RANDOM() LIMIT 1")
         ).fetchone()
-        item_id, size_id = price_row
+        return customer_row[0] if customer_row else None
 
-        # Randomly select a store from the stores table
-        store_row = session.execute(
-            text("SELECT id FROM stores ORDER BY RANDOM() LIMIT 1")
-        ).fetchone()
-        store_id = store_row[0]
+class Inventory:
+    """
+    Class responsible for inventory-related operations, such as checking and updating stock quantities.
+    """
+    
+    def __init__(self, session):
+        self.session = session
 
-        # Decide if this purchase will have:
-        # 1) No customer
-        # 2) Existing customer
-        # 3) New customer
-        roll = random.random()
+    def check_stock(self, item_id, size_id, store_id):
+        """
+        Checks if the specific combination of item, size, and store is in stock.
 
-        if roll < P_NO_CUSTOMER and customer_count > 0:
-            # 1) Purchase without customer
-            customer_id = None
+        Args:
+            item_id (int): The ID of the item.
+            size_id (int): The ID of the size.
+            store_id (int): The ID of the store.
 
-        elif roll < (P_NO_CUSTOMER + P_EXISTING_CUSTOMER) and customer_count > 0:
-            # 2) Existing customer
-            customer_row = session.execute(
-                text("SELECT customer_id FROM customers ORDER BY RANDOM() LIMIT 1")
-            ).fetchone()
-            customer_id = customer_row[0]
-
-        else:
-            # 3) New customer (or if there are no customers yet)
-            customer_data = {
-                "full_name": fake.name(),
-                "email": fake.email()
-            }
-            customer_result = session.execute(
-                text("INSERT INTO customers (full_name, email) VALUES (:full_name, :email) RETURNING customer_id"),
-                customer_data
-            )
-            customer_id = customer_result.fetchone()[0]
-            customer_count += 1
-
-            # Create address for the new customer in the addresses table
-            address_data = {
-                "street": fake.street_name(),
-                "number": str(fake.building_number()),
-                "complement": None if random.random() < P_NULL_COMPLEMENT else get_secondary_address(),
-                "neighborhood": fake.bairro(),
-                "city": fake.city(),
-                "state": fake.estado_sigla(),
-                "zip_code": fake.postcode(),
-                "country": "Brasil"
-            }
-            address_result = session.execute(
-                text("INSERT INTO addresses (street, number, complement, neighborhood, city, state, zip_code, country) "
-                     "VALUES (:street, :number, :complement, :neighborhood, :city, :state, :zip_code, :country) RETURNING id"),
-                address_data
-            )
-            address_id = address_result.fetchone()[0]
-
-            session.execute(
-                text("INSERT INTO customers_addresses (customer_id, address_id) VALUES (:customer_id, :address_id)"),
-                {"customer_id": customer_id, "address_id": address_id}
-            )
-
-            # Register the customer's phone in the phones table (if applicable)
-            phone_dict = None if random.random() < P_NULL_PHONE else generate_random_phone_number()
-            if phone_dict:
-                
-                phone_result = session.execute(
-                    text("INSERT INTO phones (phone_type, number) VALUES (:phone_type, :number) RETURNING id"),
-                    phone_dict
-                )
-                phone_id = phone_result.fetchone()[0]
-
-                session.execute(
-                    text("INSERT INTO phones_customers (phone_id, customer_id) VALUES (:phone_id, :customer_id)"),
-                    {"phone_id": phone_id, "customer_id": customer_id}
-                )
-
-        # Check if inventory is available for the selected combination
-        inventory_row = session.execute(
+        Returns:
+            bool: True if the quantity is greater than 0, False otherwise.
+        """
+        inventory_row = self.session.execute(
             text("""
                 SELECT quantity FROM inventory 
                 WHERE item_id = :item_id 
@@ -161,68 +129,176 @@ def register_purchases_and_customers():
             """),
             {"item_id": item_id, "size_id": size_id, "store_id": store_id}
         ).fetchone()
+        return inventory_row and inventory_row[0] > 0
 
-        if inventory_row and inventory_row[0] > 0:
-            # Decrement inventory quantity by 1
-            session.execute(
-                text("""
-                    UPDATE inventory 
-                    SET quantity = quantity - 1 
-                    WHERE item_id = :item_id 
-                      AND size_id = :size_id 
-                      AND store_id = :store_id
-                """),
-                {"item_id": item_id, "size_id": size_id, "store_id": store_id}
-            )
+    def decrement_stock(self, item_id, size_id, store_id):
+        """
+        Decrements the stock quantity by 1 for the specific combination of item, size, and store.
 
-            # Register the purchase in the purchases table (customer_id can be NULL)
-            order_date = fake.date_between(start_date=date(2020, 10, 31), end_date=date.today())
-            purchase_data = {
-                "customer_id": customer_id,
-                "item_id": item_id,
-                "size_id": size_id,
-                "store_id": store_id,
-                "order_date": order_date
-            }
+        Args:
+            item_id (int): The ID of the item.
+            size_id (int): The ID of the size.
+            store_id (int): The ID of the store.
+        """
+        self.session.execute(
+            text("""
+                UPDATE inventory 
+                SET quantity = quantity - 1 
+                WHERE item_id = :item_id 
+                  AND size_id = :size_id 
+                  AND store_id = :store_id
+            """),
+            {"item_id": item_id, "size_id": size_id, "store_id": store_id}
+        )
 
-            result = session.execute(
-                text("""
-                    INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) 
-                    VALUES (:customer_id, :item_id, :size_id, :store_id, :order_date)
-                    RETURNING id
-                """),
-                purchase_data
-            )
+class Purchase:
+    """
+    Class responsible for operations related to purchases, such as creating new purchases and associating them with customers.
+    """
+    
+    def __init__(self, session):
+        self.session = session
 
-            purchase_id = result.fetchone()[0]
-            
-            purchase_status_data = {
-                'purchase_id': purchase_id,
-                'status': random.choice(['Pending', 'Sent', 'Delivered', 'Canceled'])
-            }
+    def create_purchase(self, customer_id, item_id, size_id, store_id):
+        """
+        Creates a new purchase and associates it with the specified customer, item, size, and store.
 
-            session.execute(
-                text("""
-                    INSERT INTO purchases_status (purchase_id, status) 
-                    VALUES (:purchase_id, :status)
-                """),
-                purchase_status_data
-            )
-        else:
-            # If the combination is not available in inventory, log out of stock message
-            print(f"Combination out of stock: item {item_id}, size {size_id}, store {store_id}. Purchase not registered.")
+        Args:
+            customer_id (int or None): The ID of the customer, or None if no customer is associated.
+            item_id (int): The ID of the item.
+            size_id (int): The ID of the size.
+            store_id (int): The ID of the store.
 
-    session.commit()
-    session.close()
-    print(f"{num_purchases} purchase attempt(s) processed.")
+        Returns:
+            int: The ID of the newly created purchase.
+        """
+        order_date = fake.date_between(start_date=date(2020, 10, 31), end_date=date.today())
+        purchase_data = {
+            "customer_id": customer_id,
+            "item_id": item_id,
+            "size_id": size_id,
+            "store_id": store_id,
+            "order_date": order_date
+        }
+        result = self.session.execute(
+            text("""
+                INSERT INTO purchases (customer_id, item_id, size_id, store_id, order_date) 
+                VALUES (:customer_id, :item_id, :size_id, :store_id, :order_date)
+                RETURNING id
+            """),
+            purchase_data
+        )
+        purchase_id = result.fetchone()[0]
 
+        # Insert the purchase status
+        purchase_status_data = {
+            'purchase_id': purchase_id,
+            'status': random.choice(['Pending', 'Sent', 'Delivered', 'Canceled'])
+        }
+        self.session.execute(
+            text("""
+                INSERT INTO purchases_status (purchase_id, status) 
+                VALUES (:purchase_id, :status)
+            """),
+            purchase_status_data
+        )
+        return purchase_id
+
+class EcommerceManager:
+    """
+    Class that coordinates the registration of purchases and customers in the e-commerce database.
+    """
+    
+    def __init__(self, session):
+        self.session = session
+        self.customer = Customer(session)
+        self.inventory = Inventory(session)
+        self.purchase = Purchase(session)
+
+    def register_purchases_and_customers(self):
+        """
+        Registers purchases and, if necessary, new customers in the e-commerce database.
+
+        Steps:
+          1. Checks the current count of purchases. If MAX_PURCHASES is reached, no registrations occur.
+          2. For a random number of purchase attempts (between 1 and 25):
+             - Randomly selects an item and size combination from the `items_sizes` table.
+             - Randomly selects a store from the `stores` table.
+             - Decides whether the purchase will be associated with:
+                 a. No customer (customer_id NULL),
+                 b. An existing customer, or
+                 c. A new customer (creating their address and phone if applicable).
+          3. Before registering a purchase, checks if the (item_id, size_id, store_id) combination is in stock.
+             - If available, decrements the stock and registers the purchase.
+             - Otherwise, logs an "out of stock" message.
+          4. Commits all changes to the database.
+        """
+        # Check the current purchase count
+        purchase_count = self.session.execute(text("SELECT COUNT(*) FROM purchases")).scalar()
+        customer_count = self.session.execute(text("SELECT COUNT(*) FROM customers")).scalar()
+
+        if purchase_count >= MAX_PURCHASES:
+            print("Limit reached. No purchases or customers will be registered.")
+            return
+
+        # Register between 5 and 10 purchases per execution
+        num_purchases = random.randint(1, 25)
+        for _ in range(num_purchases):
+            # Randomly select an item and size combination from the items_sizes table
+            item_size_row = self.session.execute(
+                text("SELECT item_id, size_id FROM items_sizes ORDER BY RANDOM() LIMIT 1")
+            ).fetchone()
+            if not item_size_row:
+                print("No valid item-size combinations found in items_sizes table.")
+                continue
+            item_id, size_id = item_size_row
+
+            # Randomly select a store from the stores table
+            store_row = self.session.execute(
+                text("SELECT id FROM stores ORDER BY RANDOM() LIMIT 1")
+            ).fetchone()
+            if not store_row:
+                print("No stores found in the stores table.")
+                continue
+            store_id = store_row[0]
+
+            # Decide if the purchase will have:
+            # 1) No customer
+            # 2) Existing customer
+            # 3) New customer
+            roll = random.random()
+
+            if roll < P_NO_CUSTOMER and customer_count > 0:
+                customer_id = None
+            elif roll < (P_NO_CUSTOMER + P_EXISTING_CUSTOMER) and customer_count > 0:
+                customer_id = self.customer.get_random_existing_customer()
+            else:
+                customer_id = self.customer.create_new_customer()
+
+            # Check if the selected combination is available in stock
+            if self.inventory.check_stock(item_id, size_id, store_id):
+                self.inventory.decrement_stock(item_id, size_id, store_id)
+                self.purchase.create_purchase(customer_id, item_id, size_id, store_id)
+            else:
+                print(f"Combination out of stock: item {item_id}, size {size_id}, store {store_id}. Purchase not registered.")
+
+        self.session.commit()
+        print(f"{num_purchases} purchase attempt(s) processed.")
+
+# DAG configuration
 with DAG(
     dag_id='register_purchases_and_clients',
     start_date=datetime(2025, 4, 2),
     schedule_interval=timedelta(minutes=2),
     catchup=False,
 ) as dag:
+    def run_ecommerce_manager():
+        session = Session()
+        manager = EcommerceManager(session)
+        manager.register_purchases_and_customers()
+        session.close()
+
     register_task = PythonOperator(
         task_id='register_purchases_and_customers',
-        python_callable=register_purchases_and_customers,
+        python_callable=run_ecommerce_manager,
     )
