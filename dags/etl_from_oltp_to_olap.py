@@ -1,7 +1,5 @@
 import pandas as pd
 from sqlalchemy import create_engine
-
-
 # Extraindo dados de uma tabela (ex.: customers)
 class ETL():
     """
@@ -146,12 +144,64 @@ class ETL():
         dim_items.drop(columns = {'category_id','id'}, inplace = True)
 
         dim_sizes = df_sizes.rename(columns={'id':'size_id'})
+
+        dim_stores = df_stores.rename(columns={'id':'store_id'})
+        dim_stores.drop(columns={'email'},inplace=True)
+        dim_stores = pd.merge(dim_stores,df_stores_addresses,left_on='store_id',right_on='store_id',how='left')
+        dim_stores = pd.merge(dim_stores,df_addresses,left_on='address_id',right_on='id',how='left')
+        dim_stores.drop(columns={'address_id','id','street','number','complement','neighborhood','country'},inplace=True)
+        state_to_region = {
+            'AC': 'North',
+            'AL': 'North East',
+            'AP': 'North',
+            'AM': 'North',
+            'BA': 'North East',
+            'CE': 'North East',
+            'DF': 'Central-West',
+            'ES': 'South East',
+            'GO': 'Central-West',
+            'MA': 'North East',
+            'MT': 'Central-West',
+            'MS': 'Central-West',
+            'MG': 'South East',
+            'PA': 'North',
+            'PB': 'North East',
+            'PR': 'South',
+            'PE': 'North East',
+            'PI': 'North East',
+            'RJ': 'South East',
+            'RN': 'North East',
+            'RS': 'South',
+            'RO': 'North',
+            'RR': 'North',
+            'SC': 'South',
+            'SP': 'South East',
+            'SE': 'North East',
+            'TO': 'North'
+        }
+        dim_stores['region'] = dim_stores['state'].map(state_to_region)
+        
+        dim_time = pd.DataFrame()
+        dim_time['date'] = df_purchases['order_date']
+        dim_time['date_id'] = dim_time.index + 1
+        dim_time = dim_time[['date_id','date']]
+        
+        dim_time['date'] = pd.to_datetime(dim_time['date'], errors='coerce')
+        dim_time['day'] = dim_time['date'].dt.day
+        dim_time['month'] = dim_time['date'].dt.month
+        dim_time['quarter'] = ((dim_time['month'] - 1) // 4) + 1
+        dim_time['year'] = dim_time['date'].dt.year
+        dim_time['is_weekend'] = dim_time['date'].dt.dayofweek.isin([5, 6])
+
+        # Faça a filtragem por null, nan etc (so montei ate agora)
+        # Verifique os tipos
+        
         transformed_data = {
             "dim_customers": dim_customers,
             "dim_items": dim_items,
             "dim_sizes": dim_sizes,
-            "dim_stores": None,
-            "dim_time": None,
+            "dim_stores": dim_stores,
+            "dim_time": dim_time,
             "fact_sales": None,
             "fact_inventory": None
         }
