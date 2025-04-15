@@ -73,15 +73,6 @@ class DimItems(Base):
     item_id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String(50), nullable=True)
     category_name = Column(String(50), nullable=False)
-    price_range = Column(String(30),nullable=False)
-    __table_args__ = (
-        CheckConstraint("price_range IN ('Budget','Affordable','Mid-range','Premium','Luxury')", name="check_valid_state"),
-    )
-    #     💸 Budget (e.g. $0–$50)
-    # 💰 Affordable (e.g. $51–$150)
-    # 💼 Mid-range (e.g. $151–$300)
-    # 💎 Premium (e.g. $301–$600)
-    # 👑 Luxury (e.g. $600+)
 
 class DimCustomers(Base):
     __tablename__ = "dim_customers"
