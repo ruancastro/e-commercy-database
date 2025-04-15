@@ -137,18 +137,19 @@ class ETL():
         df_phones_stores = extracted_data["phones_stores"]
 
         #Transform 
-        df_dim_customers = df_customers
+        dim_customers = df_customers
 
-        df_dim_items = df_items
-        df_dim_items.rename(columns={'id': 'item_id'}, inplace = True)
-        df_dim_items = pd.merge(df_dim_items,df_categories,left_on = 'category_id', right_on = 'id', how = 'left')
-        df_dim_items.rename(columns={'name_x': 'name', 'name_y': 'category_name'}, inplace = True)
-        df_dim_items.drop(columns = {'category_id','id'}, inplace = True)
+        dim_items = df_items
+        dim_items.rename(columns={'id': 'item_id'}, inplace = True)
+        dim_items = pd.merge(dim_items,df_categories,left_on = 'category_id', right_on = 'id', how = 'left')
+        dim_items.rename(columns={'name_x': 'name', 'name_y': 'category_name'}, inplace = True)
+        dim_items.drop(columns = {'category_id','id'}, inplace = True)
 
+        dim_sizes = df_sizes.rename(columns={'id':'size_id'})
         transformed_data = {
-            "dim_customers": None,
-            "dim_items": None,
-            "dim_sizes": None,
+            "dim_customers": dim_customers,
+            "dim_items": dim_items,
+            "dim_sizes": dim_sizes,
             "dim_stores": None,
             "dim_time": None,
             "fact_sales": None,
