@@ -9,14 +9,14 @@ from utils.phone_utils import generate_random_phone_number
 from utils.customer_email import generate_customer_email
 from utils.brazilian_address_complement import generate_brazilian_address_complement
 
-# Configuração do banco de dados
+# Database configuration
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 MAX_PURCHASES = 100
 fake = Faker('pt_BR')
 
-# Probabilidades configuráveis
+# Configurable probabilities
 P_NO_CUSTOMER = 0.3
 P_EXISTING_CUSTOMER = 0.3
 P_NEW_CUSTOMER = 0.4
@@ -180,7 +180,7 @@ class EcommerceManager:
                 text("SELECT id FROM stores ORDER BY RANDOM() LIMIT 1")
             ).fetchone()
             if not store_row:
-                print("Nenhuma loja encontrada na tabela stores.")
+                print("No stores found in the stores table.")
                 continue
             store_id = store_row[0]
 
@@ -194,31 +194,49 @@ class EcommerceManager:
 
             num_items = random.randint(1, 5)
             items_sizes_quantities = []
+            combination_to_index = {}
+
             for _ in range(num_items):
                 item_size_row = self.session.execute(
                     text("SELECT item_id, size_id FROM items_sizes ORDER BY RANDOM() LIMIT 1")
                 ).fetchone()
-                if item_size_row:
-                    item_id, size_id = item_size_row
-                    quantity = random.randint(1, 3)
-                    if self.inventory.check_stock(item_id, size_id, store_id, quantity):
-                        items_sizes_quantities.append({
-                            "item_id": item_id,
-                            "size_id": size_id,
-                            "quantity": quantity
-                        })
-                    else:
-                        print(f"Estoque insuficiente para item {item_id}, tamanho {size_id}, loja {store_id}. Item ignorado.")
+                if not item_size_row:
+                    print("No item/size combination found.")
+                    continue
+                item_id, size_id = item_size_row
+                combination = (item_id, size_id)
 
-            if items_sizes_quantities:
-                purchase_id = self.purchase.create_purchase(customer_id, store_id, items_sizes_quantities)
-                for item in items_sizes_quantities:
+                if combination in combination_to_index:
+                    idx = combination_to_index[combination]
+                    items_sizes_quantities[idx]["quantity"] += random.randint(1, 3)
+                else:
+                    quantity = random.randint(1, 3)
+                    items_sizes_quantities.append({
+                        "item_id": item_id,
+                        "size_id": size_id,
+                        "quantity": quantity
+                    })
+                    combination_to_index[combination] = len(items_sizes_quantities) - 1
+
+            valid_items = []
+            for item in items_sizes_quantities:
+                item_id = item["item_id"]
+                size_id = item["size_id"]
+                quantity = item["quantity"]
+                if self.inventory.check_stock(item_id, size_id, store_id, quantity):
+                    valid_items.append(item)
+                else:
+                    print(f"Insufficient stock for item {item_id}, size {size_id}, store {store_id}, quantity {quantity}. Item skipped.")
+
+            if valid_items:
+                purchase_id = self.purchase.create_purchase(customer_id, store_id, valid_items)
+                for item in valid_items:
                     self.inventory.decrement_stock(item["item_id"], item["size_id"], store_id, item["quantity"])
             else:
-                print(f"Nenhum item disponível com estoque suficiente para a compra na loja {store_id}.")
+                print(f"No items available with sufficient stock for the purchase in store {store_id}.")
 
         self.session.commit()
-        print(f"{num_purchases} tentativa(s) de compra processada(s).")
+        print(f"{num_purchases} purchase attempt(s) processed.")
 
 # Configuração do DAG
 with DAG(
