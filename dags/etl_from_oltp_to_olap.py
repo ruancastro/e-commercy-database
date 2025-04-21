@@ -32,6 +32,7 @@ class ETL():
                     - "phones": DataFrame with data from the phones table.
                     - "items": DataFrame with data from the items table.
                     - "sizes": DataFrame with data from the sizes table.
+                    - "items_sizes": DataFrame with data from the items_sizes table.
                     - "stores": DataFrame with data from the stores table.
                     - "prices": DataFrame with data from the prices table.
                     - "categories": DataFrame with data from the categories table.
@@ -47,20 +48,22 @@ class ETL():
         df_phones_customers = pd.read_sql("SELECT * FROM phones_customers;",self.oltp_engine)
         df_customers = pd.read_sql("SELECT * FROM customers;",self.oltp_engine)
         
-        df_purchases_status = pd.read_sql("SELECT * FROM purchases_status;",self.oltp_engine)
-        df_purchases = pd.read_sql("SELECT * FROM purchases", self.oltp_engine)
-        df_addresses = pd.read_sql("SELECT * FROM addresses;",self.oltp_engine)
-        df_phones = pd.read_sql("SELECT * FROM phones;",self.oltp_engine)
+        df_purchases_status = pd.read_sql("SELECT * FROM purchases_status;", self.oltp_engine)
+        df_purchases = pd.read_sql("SELECT * FROM purchases",  self.oltp_engine)
+        df_addresses = pd.read_sql("SELECT * FROM addresses;", self.oltp_engine)
+        df_phones = pd.read_sql("SELECT * FROM phones;", self.oltp_engine)
 
-        df_items = pd.read_sql("SELECT * FROM items;",self.oltp_engine)
-        df_sizes = pd.read_sql("SELECT * FROM sizes;",self.oltp_engine)
-        df_stores = pd.read_sql("SELECT * FROM stores;",self.oltp_engine)
+        df_items = pd.read_sql("SELECT * FROM items;", self.oltp_engine)
+        df_sizes = pd.read_sql("SELECT * FROM sizes;", self.oltp_engine)
+        df_items_sizes = pd.read_sql("SELECT * FROM items_sizes;",  self.oltp_engine)
+        df_stores = pd.read_sql("SELECT * FROM stores;", self.oltp_engine)
 
-        df_prices = pd.read_sql("SELECT * FROM prices;",self.oltp_engine)
-        df_categories = pd.read_sql("SELECT * FROM categories;",self.oltp_engine)
-        df_inventory = pd.read_sql("SELECT * FROM inventory;",self.oltp_engine)
-        df_stores_addresses = pd.read_sql("SELECT * FROM stores_addresses;",self.oltp_engine)
-        df_phones_stores = pd.read_sql("SELECT * FROM phones_stores;",self.oltp_engine)
+        df_prices = pd.read_sql("SELECT * FROM prices;", self.oltp_engine)
+        df_categories = pd.read_sql("SELECT * FROM categories;", self.oltp_engine)
+        df_inventory = pd.read_sql("SELECT * FROM inventory;", self.oltp_engine)
+        df_stores_addresses = pd.read_sql("SELECT * FROM stores_addresses;", self.oltp_engine)
+        df_phones_stores = pd.read_sql("SELECT * FROM phones_stores;", self.oltp_engine)
+        
 
         return {
         "customers_addresses": df_customers_addresses,
@@ -72,6 +75,7 @@ class ETL():
         "phones": df_phones,
         "items": df_items,
         "sizes": df_sizes,
+        "items_sizes": df_items_sizes,
         "stores": df_stores,
         "prices": df_prices,
         "categories": df_categories,
@@ -127,6 +131,7 @@ class ETL():
         df_phones = extracted_data["phones"]
         df_items = extracted_data["items"]
         df_sizes = extracted_data["sizes"]
+        df_items_sizes = extracted_data["items_sizes"]
         df_stores = extracted_data["stores"]
         df_prices = extracted_data["prices"]
         df_categories = extracted_data["categories"]
@@ -182,17 +187,33 @@ class ETL():
         dim_stores['region'] = dim_stores['state'].map(state_to_region)
         
         dim_time = pd.DataFrame()
-        dim_time['date'] = df_purchases['order_date']
+        dim_time['date'] = pd.to_datetime(df_purchases['order_date'], errors='coerce')
+        dim_time = dim_time.drop_duplicates().reset_index(drop=True)
         dim_time['date_id'] = dim_time.index + 1
-        dim_time = dim_time[['date_id','date']]
-        
-        dim_time['date'] = pd.to_datetime(dim_time['date'], errors='coerce')
+        dim_time = dim_time[['date_id', 'date']]
+
         dim_time['day'] = dim_time['date'].dt.day
         dim_time['month'] = dim_time['date'].dt.month
-        dim_time['quarter'] = ((dim_time['month'] - 1) // 4) + 1
+        dim_time['quarter'] = ((dim_time['month'] - 1) // 3) + 1
         dim_time['year'] = dim_time['date'].dt.year
         dim_time['is_weekend'] = dim_time['date'].dt.dayofweek.isin([5, 6])
 
+        fact_inventory = df_items_sizes
+        fact_inventory = pd.merge(fact_inventory,df_inventory,on=['item_id','size_id'],how='right')
+        fact_inventory.rename(columns={'quantity': 'quantity_in_stock'}, inplace= True)
+        #Continue aqui depois
+
+
+        fact_sales = df_purchases
+        fact_sales.rename(columns={'id':'purchase_id'},inplace=True)
+        fact_sales['order_date'] = pd.to_datetime(fact_sales['order_date'],errors='coerce')
+        fact_sales = pd.merge(fact_sales,dim_time,left_on='order_date',right_on='date', how='inner')
+        fact_sales.drop(columns=['order_date','created_at','date','day','month','quarter','year','is_weekend'],inplace=True)
+        fact_sales = pd.merge(fact_sales,df_purchases_status,on='purchase_id',how='inner')
+        fact_sales.rename(columns={'status':'purchase_status'}, inplace=True)
+        #ainda falta, total_value e quantity_sold 
+        
+        
         # Faça a filtragem por null, nan etc (so montei ate agora)
         # Verifique os tipos
         
