@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DECIMAL, TIMESTAMP, Date, CHAR, CheckConstraint, BIGINT
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DECIMAL, TIMESTAMP, Date, CHAR, CheckConstraint, ForeignKeyConstraint, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -156,12 +156,26 @@ class Purchases(Base):
     __tablename__ = "purchases"
     id = Column(Integer, primary_key=True, autoincrement=True)
     customer_id = Column(Integer, ForeignKey("customers.customer_id"), nullable=True)
-    item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
-    size_id = Column(Integer, ForeignKey("sizes.id"), nullable=False)
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
     order_date = Column(Date, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     status = relationship("PurchaseStatus", back_populates="purchase")
+
+class PurchasesItems(Base):
+    __tablename__ = "purchases_items"
+    purchase_id = Column(Integer, ForeignKey("purchases.id"), primary_key=True, nullable=False)
+    item_id = Column(Integer, ForeignKey("items.id"), primary_key=True, nullable=False)
+    size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True, nullable=False)
+    quantity = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="check_quantity_positive"),
+        ForeignKeyConstraint(
+            ["item_id", "size_id"],
+            ["items_sizes.item_id", "items_sizes.size_id"],
+            name="fk_purchases_items_items_sizes"
+        ),
+    )
 
 class PurchaseStatus(Base):
     __tablename__ = "purchases_status"
