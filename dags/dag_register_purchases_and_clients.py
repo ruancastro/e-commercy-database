@@ -13,7 +13,7 @@ from utils.brazilian_address_complement import generate_brazilian_address_comple
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
-MAX_PURCHASES = 100
+MAX_PURCHASES = 1000
 fake = Faker('pt_BR')
 
 # Configurable probabilities
