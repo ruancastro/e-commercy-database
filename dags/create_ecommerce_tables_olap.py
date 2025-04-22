@@ -12,17 +12,17 @@ Base = declarative_base()
 class FactSales(Base):
     __tablename__ = "fact_sales"
     purchase_id = Column(Integer, primary_key=True, nullable=False)
+    item_id = Column(Integer, ForeignKey('dim_items.item_id'),primary_key=True, nullable=False)
+    size_id = Column(Integer, ForeignKey('dim_sizes.size_id'), primary_key=True, nullable=False)
     customer_id = Column(Integer, ForeignKey('dim_customers.customer_id'), nullable=True)
-    item_id = Column(Integer, ForeignKey('dim_items.item_id'), nullable=False)
-    size_id = Column(Integer, ForeignKey('dim_sizes.size_id'), nullable=False)
     store_id = Column(Integer, ForeignKey('dim_stores.store_id'), nullable=False)
     date_id = Column(Integer, ForeignKey('dim_time.date_id'), nullable=False)
     purchase_status = Column(String(20),nullable=False)
-    total_value = Column(Float, nullable=False)
+    line_value = Column(Float, nullable=False)
     quantity_sold = Column(Integer, nullable=False)
     customer = relationship("DimCustomers", back_populates="sales")
     __table_args__ = (
-        CheckConstraint('total_value >= 0', name='check_total_value_not_negative'),
+        CheckConstraint('line_value >= 0', name='check_line_value_not_negative'),
         CheckConstraint('quantity_sold >= 0', name='check_quantity_sold_not_negative'),
         CheckConstraint("purchase_status IN ('Pending', 'Sent', 'Delivered', 'Canceled')", name='check_valid_status'),
     )
