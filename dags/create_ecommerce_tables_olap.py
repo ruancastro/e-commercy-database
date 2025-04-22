@@ -69,7 +69,7 @@ class DimStores(Base):
     __table_args__ = (
         CheckConstraint("state IN ('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')", name="check_valid_state"),
         CheckConstraint("zip_code ~ '^[0-9]{5}(-?[0-9]{3})?$'", name="check_zip_code_format"),
-        CheckConstraint("region  IN ('North', 'Northeast', 'Midwest', 'Southeast','South')", name="check_region")
+        CheckConstraint("region IN ('Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul')", name="check_region")
     )
 
 class DimItems(Base):
