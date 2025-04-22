@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, PrimaryKeyConstraint, CheckConstraint, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, TIMESTAMP, Date, CHAR, PrimaryKeyConstraint, CheckConstraint, Boolean, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -41,13 +41,17 @@ class FactInventory(Base):
 
 class DimTime(Base):
     __tablename__ = "dim_time"
-    date_id = Column(Integer, primary_key=True, nullable=False)
-    date = Column(Date, nullable=False)
+    date_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    date = Column(Date, nullable=False, unique=True)
     day = Column(Integer, nullable=False) 
     month = Column(Integer, nullable=False) 
     quarter = Column(Integer, nullable=False) 
     year = Column(Integer, nullable=False) 
-    is_wekend = Column(Boolean, nullable=False)
+    is_weekend = Column(Boolean, nullable=False)
+    
+    __table_args__ = (
+        UniqueConstraint("date", name="unique_date"),
+    )
 
 class DimSizes(Base):
     __tablename__ = "dim_sizes"
