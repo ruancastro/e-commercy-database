@@ -272,9 +272,7 @@ The project is containerized using **Docker** and **Docker Compose**:
 
 Feel free to reach out to me for questions or collaboration opportunities:
 
-- **Email**: \[ Email\]
-- **LinkedIn**: \[ LinkedIn Profile\]
-- **GitHub**: \[ GitHub Profile\]
+- **LinkedIn**: [Ruan Castro](https://www.linkedin.com/in/ruan-castro-900262183/)
 
 ---
 
@@ -552,6 +550,4 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
 
 Fique à vontade para me contatar para perguntas ou oportunidades de colaboração:
 
-- **E-mail**: \[ E-mail\]
-- **LinkedIn**: \[ Perfil LinkedIn\]
-- **GitHub**: \[ Perfil GitHub\]
+- **LinkedIn**: [Ruan Castro](https://www.linkedin.com/in/ruan-castro-900262183/)
