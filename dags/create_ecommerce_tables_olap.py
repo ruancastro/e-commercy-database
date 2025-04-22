@@ -56,7 +56,7 @@ class DimTime(Base):
 class DimSizes(Base):
     __tablename__ = "dim_sizes"
     size_id = Column(Integer, primary_key=True, nullable=False)
-    size = Column(String(4), nullable=False)
+    size = Column(String(10), nullable=False)
 
 class DimStores(Base):
     __tablename__ = "dim_stores"
