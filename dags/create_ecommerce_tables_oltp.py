@@ -14,7 +14,7 @@ Base = declarative_base()
 
 # Path to the CSV file
 dag_dir = path.dirname(path.abspath(__file__))
-csv_path = path.join(dag_dir, "utils", "items_and_categories.csv")
+csv_path = path.join(dag_dir, "utils", "data", "items_and_categories.csv")
 
 # Read the CSV using pandas
 root_csv = read_csv(csv_path)

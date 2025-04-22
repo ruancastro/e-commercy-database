@@ -10,7 +10,7 @@ STORES_QUANTITY = 10
 ITEMS_QUANTITY = 40  # MAX 100
 
 dag_dir = path.dirname(path.abspath(__file__))
-path_root_csv = path.join(dag_dir, "utils", "items_and_categories.csv")
+path_root_csv = path.join(dag_dir, "utils", "data", "items_and_categories.csv")
 
 ecommerce_starter = EcommerceStarter(
     DATABASE_URL=DATABASE_URL,
