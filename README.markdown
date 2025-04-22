@@ -204,6 +204,7 @@ The project is containerized using **Docker** and **Docker Compose**:
    - Docker and Docker Compose installed.
    - Python 3.12+ (if running without Docker).
    - PostgreSQL (if running without Docker).
+   - Airflow (if running without Docker).
 
 2. **Setup**:
 
@@ -483,6 +484,7 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
    - Docker e Docker Compose instalados.
    - Python 3.12+ (se executar sem Docker).
    - PostgreSQL (se executar sem Docker).
+   - Airflow (se executar sem Docker).
 
 2. **Configuração**:
 
