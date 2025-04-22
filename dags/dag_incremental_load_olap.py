@@ -37,7 +37,7 @@ def extract_task(**kwargs):
     Uses the last execution date to fetch only new or updated records.
     """
     # Get the last execution date from the context
-    last_execution_date = kwargs['prev_ds'] if 'prev_ds' in kwargs else None
+    last_execution_date = kwargs['prev_ds'] if 'prev_ds' in kwargs else '2025-04-22 13:00:00'
     extracted_data = etl.extract(last_execution_date=last_execution_date)
     # Store the extracted data in XCom for the next task
     kwargs['ti'].xcom_push(key='extracted_data', value=extracted_data)
