@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 
 Base = declarative_base()
 
-# Define the schema for OLAP tables
 class FactSales(Base):
     __tablename__ = "fact_sales"
     purchase_id = Column(Integer, primary_key=True, nullable=False)
@@ -152,7 +151,6 @@ class ETLBase(ABC):
         df_stores_addresses = extracted_data["stores_addresses"]
         df_phones_stores = extracted_data["phones_stores"]
 
-        # Dimensions
         dim_customers = df_customers
 
         dim_items = df_items
@@ -239,7 +237,6 @@ class ETLInitial(ETLBase):
             })
             dim_time = pd.concat([dim_time, temp_dim_time], ignore_index=True)
 
-        # Fact table fact_sales
         fact_sales = df_purchases
         fact_sales.rename(columns={'id': 'purchase_id'}, inplace=True)
         fact_sales['order_date'] = pd.to_datetime(fact_sales['order_date'], errors='coerce')
@@ -276,7 +273,6 @@ class ETLInitial(ETLBase):
         if 'date_id' not in fact_inventory.columns or fact_inventory['date_id'].isna().any():
             raise ValueError("Issue including date_id in fact_inventory")
 
-        # Return the transformed data
         transformed_data = {
             "dim_customers": dim_customers,
             "dim_items": dim_items,
@@ -293,21 +289,17 @@ class ETLInitial(ETLBase):
         Loads the transformed data into the OLAP database for initial population.
         Drops existing tables with CASCADE and recreates the schema using SQLAlchemy ORM.
         """
-        # Load order: dimensions first, then facts
         load_order = [
             "dim_time", "dim_customers", "dim_items", "dim_sizes", "dim_stores",
             "fact_sales", "fact_inventory"
         ]
 
-        # Drop all tables with CASCADE to handle dependencies
         Base.metadata.drop_all(self.olap_engine)
         print("All existing tables dropped successfully with CASCADE.")
 
-        # Recreate the schema using the defined ORM classes
         Base.metadata.create_all(self.olap_engine)
         print("OLAP schema recreated successfully.")
 
-        # Load the tables with the transformed data
         for table_name in load_order:
             df = transformed_data.get(table_name)
             if df is not None and not df.empty:
@@ -327,7 +319,6 @@ class ETLIncremental(ETLBase):
             if 'created_at' in df.columns and last_execution_date:
                 extracted_data[key] = df[df['created_at'] > pd.to_datetime(last_execution_date)]
 
-        # Extract dim_time from OLAP to fetch date_id
         df_dim_time = pd.read_sql("SELECT date_id, date FROM dim_time;", self.olap_engine)
         extracted_data['dim_time'] = df_dim_time
 
@@ -342,10 +333,8 @@ class ETLIncremental(ETLBase):
         df_inventory = extracted_data["inventory"]
         df_dim_time = extracted_data["dim_time"]
 
-        # Common transformations for dimensions
         dim_customers, dim_items, dim_sizes, dim_stores = self.transform_common_dimensions(extracted_data)
 
-        # Prepare dim_time for updates
         new_dates = pd.to_datetime(df_purchases['order_date'], errors='coerce').dt.date.drop_duplicates()
         new_dates_df = pd.DataFrame({
             'date': new_dates,
@@ -359,7 +348,6 @@ class ETLIncremental(ETLBase):
         new_dates_df = new_dates_df[~new_dates_df['date'].isin(df_dim_time['date'])]
         dim_time = pd.concat([df_dim_time, new_dates_df], ignore_index=True)
 
-        # Fact table fact_sales
         fact_sales = df_purchases
         fact_sales.rename(columns={'id': 'purchase_id'}, inplace=True)
         fact_sales['order_date'] = pd.to_datetime(fact_sales['order_date'], errors='coerce')
@@ -385,7 +373,6 @@ class ETLIncremental(ETLBase):
         ]
         fact_sales = fact_sales[column_order]
 
-        # Fact table fact_inventory
         current_date = pd.to_datetime(datetime.now().date())
         if current_date not in dim_time['date'].values:
             temp_dim_time = pd.DataFrame({
@@ -405,7 +392,6 @@ class ETLIncremental(ETLBase):
         fact_inventory.rename(columns={'quantity': 'quantity_in_stock'}, inplace=True)
         fact_inventory = fact_inventory[['item_id', 'size_id', 'store_id', 'date_id', 'quantity_in_stock']]
 
-        # Return the transformed data
         transformed_data = {
             "dim_customers": dim_customers,
             "dim_items": dim_items,
@@ -418,7 +404,6 @@ class ETLIncremental(ETLBase):
         return transformed_data
 
     def load(self, transformed_data):
-        # Load order: dimensions first, then facts
         load_order = [
             "dim_time", "dim_customers", "dim_items", "dim_sizes", "dim_stores",
             "fact_sales", "fact_inventory"

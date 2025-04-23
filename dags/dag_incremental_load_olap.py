@@ -82,5 +82,4 @@ load = PythonOperator(
     dag=dag,
 )
 
-# Set task dependencies
 extract >> transform >> load

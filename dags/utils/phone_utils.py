@@ -29,7 +29,6 @@ def generate_random_phone_number(forced_type: Optional[str] = None) -> tuple[str
     
     ddd = str(random.choice(valid_ddds))
     
-    # Normalize and validate forced_type
     allowed_types = ["Residential", "Mobile", "Commercial"]
     if forced_type:
         forced_type = forced_type.capitalize()
@@ -37,10 +36,8 @@ def generate_random_phone_number(forced_type: Optional[str] = None) -> tuple[str
             raise ValueError(f"Invalid forced_type. Must be one of: {allowed_types}")
         phone_type = forced_type
     else:
-        # Randomly choose type, biased toward Residential
         phone_type = random.choices(allowed_types, weights=[0.5, 0.3, 0.2])[0]
 
-    # Build number based on type
     if phone_type == "Mobile":
         first_part = '9' + str(random.randint(1000, 9999))
     else:
@@ -49,7 +46,6 @@ def generate_random_phone_number(forced_type: Optional[str] = None) -> tuple[str
     
     second_part = str(random.randint(1000, 9999))
 
-    # Format number in a random style
     format_type = random.choice(["plain", "hyphen", "space", "parentheses"])
 
     if format_type == "plain":

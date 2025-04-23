@@ -19,7 +19,6 @@ ecommerce_starter = EcommerceStarter(
     items_quantity=ITEMS_QUANTITY,
 )
 
-# Definição da DAG para inicialização dos dados
 with DAG(
     dag_id="dag_initial_load_oltp",
     start_date=datetime(2025, 4, 2),

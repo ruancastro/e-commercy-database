@@ -15,10 +15,8 @@ OLTP_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce
 OLAP_URL = "postgresql+psycopg2://olap:ecommerce123@postgres_olap:5432/ecommerce_olap"
 # OLAP_URL = "postgresql+psycopg2://olap:ecommerce123@localhost:5434/ecommerce_olap"  # local
 
-# Instantiate the ETLInitial class
 etl = ETLInitial(oltp_url=OLTP_URL, olap_url=OLAP_URL)
 
-# Functions for DAG tasks
 def extract_task():
     return etl.extract()
 
@@ -30,7 +28,6 @@ def load_task(**context):
     transformed_data = context['task_instance'].xcom_pull(task_ids='transform_task')
     etl.load(transformed_data)
 
-# DAG definition
 with DAG(
     'initial_load_olap',
     default_args=default_args,
@@ -55,5 +52,4 @@ with DAG(
         provide_context=True,
     )
 
-    # Task order: extract -> transform -> load
     extract >> transform >> load

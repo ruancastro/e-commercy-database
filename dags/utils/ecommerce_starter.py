@@ -108,7 +108,6 @@ class EcommerceStarter:
         self.item_ids = None
         self.items_sizes = None
 
-        # HOW MUCH?
         self.items_used = self.items[0:items_quantity]
         self.stores_names_used = self.stores_names[0 : self.stores_quantity]
 
@@ -356,30 +355,22 @@ class EcommerceStarter:
         Returns:
             list: A list of tuples (item_id, size_id) representing the inserted associations.
         """
-        # Create dictionaries for quick lookup
         item_id_map = dict(
             zip(self.items_used, self.item_ids)
-        )  # Maps item name to item_id
-        size_id_map = dict(zip(self.valid_sizes, self.size_ids))  # Maps size to size_id
+        )  
+        size_id_map = dict(zip(self.valid_sizes, self.size_ids))
 
-        # List to store the inserted (item_id, size_id) pairs
         inserted_pairs = []
 
-        # Filter the DataFrame to include only items in self.items_used
         df_filtered = self.root_df[self.root_df["nome_item"].isin(self.items_used)]
 
-        # Iterate over each row in the filtered DataFrame
         for _, row in df_filtered.iterrows():
             item_name = row["nome_item"]
             valid_sizes_str = row["tamanhos_validos"]
 
-            # Get the item_id for the current item
             item_id = item_id_map[item_name]
-
-            # Split the valid sizes (semicolon-separated)
             valid_sizes = valid_sizes_str.split(";")
 
-            # Insert each valid size association into the items_sizes table
             for size in valid_sizes:
                 size_id = size_id_map[size]
                 item_size = {"item_id": item_id, "size_id": size_id}
@@ -419,7 +410,7 @@ class EcommerceStarter:
             if entry not in inventory_entries:
                 inventory_entries.add(entry)
                 inserted += 1
-                attempts_without_new = 0  # Reseta o contador de tentativas sem sucesso
+                attempts_without_new = 0 
 
                 quantity = random.randint(1, 500)
                 self.session.execute(
@@ -434,7 +425,6 @@ class EcommerceStarter:
                     },
                 )
             else:
-                # Combinação já existente: incrementa o contador de tentativas sem sucesso
                 attempts_without_new += 1
 
     def populate_prices(self):

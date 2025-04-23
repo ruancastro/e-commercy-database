@@ -7,19 +7,16 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from os import path
 from pandas import read_csv
-# config new database Ecommerce_OLTP
+
 DATABASE_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp" # Just because its a project doc
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
-# Path to the CSV file
 dag_dir = path.dirname(path.abspath(__file__))
 csv_path = path.join(dag_dir, "utils", "data", "items_and_categories.csv")
 
-# Read the CSV using pandas
 root_csv = read_csv(csv_path)
 
-# Constraint for sizes
 valid_sizes = set()
 for sizes in root_csv["tamanhos_validos"]:
     for size in sizes.split(";"):
@@ -28,7 +25,6 @@ for sizes in root_csv["tamanhos_validos"]:
 sizes_constraint = ", ".join(f"'{size}'" for size in valid_sizes)
 constraint_sizes_sql = f"size IN ({sizes_constraint})"
 
-# Constraint for categories:
 valid_categories = set(root_csv["categoria"])
 categories_constraint = ", ".join(f"'{category}'" for category in valid_categories)
 category_constraint_sql = f"name IN ({categories_constraint})"
@@ -120,7 +116,6 @@ class Phones(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     phone_type = Column(String(20))
     number = Column(String(20), nullable=False)
-    # __table_args__ = (CheckConstraint("number ~ '^[0-9]+$'", name="check_phone_number_format"),)
     __table_args__ = (
         CheckConstraint(
             r"""number ~ '^(?:\(?(

@@ -238,7 +238,6 @@ class EcommerceManager:
         self.session.commit()
         print(f"{num_purchases} purchase attempt(s) processed.")
 
-# Configuração do DAG
 with DAG(
     dag_id='register_purchases_and_clients',
     start_date=datetime(2025, 4, 2),
