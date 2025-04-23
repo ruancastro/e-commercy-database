@@ -1,5 +1,6 @@
 import random
 
+
 def generate_brazilian_address_complement():
     """
     Gera um complemento de endereço aleatório no formato brasileiro ou None.
@@ -15,7 +16,7 @@ def generate_brazilian_address_complement():
     if random.random() <= 0.4:
         return None
     else:
-            types = ["Apto", "Sala", "Bloco", "Casa", "Loja"]
-            type_ = random.choice(types)
-            number = random.randint(1, 999)
-            return f"{type_} {number}"
+        types = ["Apto", "Sala", "Bloco", "Casa", "Loja"]
+        type_ = random.choice(types)
+        number = random.randint(1, 999)
+        return f"{type_} {number}"

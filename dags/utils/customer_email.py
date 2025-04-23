@@ -1,12 +1,14 @@
 import re
 
+
 def normalize_name(name):
     """
     Normalizes the provided name by converting it to lowercase and removing non-alphabetic characters.
     """
     name = name.lower()
-    name = re.sub(r'[^a-z]', '', name)  # Removes non-alphabetic characters
+    name = re.sub(r"[^a-z]", "", name)  # Removes non-alphabetic characters
     return name
+
 
 def generate_customer_email(full_name):
     """
@@ -27,7 +29,7 @@ def generate_customer_email(full_name):
 
     parts = full_name.split()
 
-    parts = [p for p in parts if p.lower() not in ['da', 'de', 'dos', 'das']]
+    parts = [p for p in parts if p.lower() not in ["da", "de", "dos", "das"]]
 
     if len(parts) < 2:
         email = normalize_name(parts[0])

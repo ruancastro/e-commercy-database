@@ -1,5 +1,6 @@
 import re
 
+
 def generate_store_email(store_name):
     """
     Generates a commercial email address for a given store name.
@@ -18,9 +19,9 @@ def generate_store_email(store_name):
         return None
 
     normalized_name = store_name.lower().strip()
-    normalized_name = re.sub(r'[^a-z0-9]', '_', normalized_name)
-    normalized_name = re.sub(r'_+', '_', normalized_name)
-    normalized_name = normalized_name.strip('_')
+    normalized_name = re.sub(r"[^a-z0-9]", "_", normalized_name)
+    normalized_name = re.sub(r"_+", "_", normalized_name)
+    normalized_name = normalized_name.strip("_")
 
     if not normalized_name:
         return None

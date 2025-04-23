@@ -355,9 +355,7 @@ class EcommerceStarter:
         Returns:
             list: A list of tuples (item_id, size_id) representing the inserted associations.
         """
-        item_id_map = dict(
-            zip(self.items_used, self.item_ids)
-        )  
+        item_id_map = dict(zip(self.items_used, self.item_ids))
         size_id_map = dict(zip(self.valid_sizes, self.size_ids))
 
         inserted_pairs = []
@@ -410,7 +408,7 @@ class EcommerceStarter:
             if entry not in inventory_entries:
                 inventory_entries.add(entry)
                 inserted += 1
-                attempts_without_new = 0 
+                attempts_without_new = 0
 
                 quantity = random.randint(1, 500)
                 self.session.execute(
