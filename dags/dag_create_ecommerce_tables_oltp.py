@@ -47,6 +47,9 @@ class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )    
     CheckConstraint(category_constraint_sql, name="check_category_values"),
 
 
@@ -55,26 +58,35 @@ class Items(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
 
 class Size(Base):
     __tablename__ = "sizes"
     id = Column(Integer, primary_key=True, autoincrement=True)
     size = Column(String(10), nullable=False)
     CheckConstraint(constraint_sizes_sql, name="check_size_values")
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
 
 class Items_sizes(Base):
     __tablename__ = "items_sizes"
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True)
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
 
 class Prices(Base):
     __tablename__ = "prices"
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True)
     value = Column(DECIMAL(10, 2), nullable=False)
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
     __table_args__ = (CheckConstraint("value > 0", name="check_positive_price"),)
 
 
@@ -83,6 +95,9 @@ class Stores(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
     email = Column(String(50), nullable=False)
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
 
     addresses = relationship(
         "StoresAddresses",
@@ -109,6 +124,9 @@ class Addresses(Base):
     state = Column(CHAR(2), nullable=False)
     zip_code = Column(String(10), nullable=False)
     country = Column(String(50), default="Brasil")
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
     __table_args__ = (
         CheckConstraint(
             "state IN ('AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO')",
@@ -127,7 +145,9 @@ class StoresAddresses(Base):
     )
     address_id = Column(Integer, ForeignKey("addresses.id"), primary_key=True)
     store = relationship("Stores", back_populates="addresses")
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
 
 class Customers(Base):
     __tablename__ = "customers"
@@ -160,7 +180,9 @@ class CustomersAddresses(Base):
     )
     address_id = Column(Integer, ForeignKey("addresses.id"), primary_key=True)
     customer = relationship("Customers", back_populates="addresses")
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
 
 class Phones(Base):
     __tablename__ = "phones"
@@ -234,7 +256,9 @@ class PurchasesItems(Base):
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True, nullable=False)
     size_id = Column(Integer, ForeignKey("sizes.id"), primary_key=True, nullable=False)
     quantity = Column(Integer, nullable=False)
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
     __table_args__ = (
         CheckConstraint("quantity > 0", name="check_quantity_positive"),
         ForeignKeyConstraint(
@@ -254,6 +278,9 @@ class PurchaseStatus(Base):
         nullable=False,
     )
     status = Column(String(20), nullable=False)
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
     purchase = relationship("Purchases", back_populates="status")
     __table_args__ = (
         CheckConstraint(
@@ -271,7 +298,9 @@ class Inventory(Base):
         Integer, ForeignKey("stores.id"), primary_key=True, nullable=False
     )
     quantity = Column(BIGINT, nullable=False)
-
+    created_at = Column(
+        TIMESTAMP, nullable=False, server_default=func.current_timestamp()
+    )
     __table_args__ = (
         CheckConstraint("quantity >= 0", name="check_not_negative_quantity"),
     )
