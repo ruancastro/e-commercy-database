@@ -15,7 +15,7 @@ DATABASE_URL = (
 )
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
-MAX_PURCHASES = 1000
+MAX_PURCHASES = 350
 fake = Faker("pt_BR")
 
 # Configurable probabilities
