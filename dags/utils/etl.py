@@ -10,7 +10,16 @@ from psycopg2 import extras
 from sqlalchemy.dialects.postgresql import insert
 from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
-from dag_create_ecommerce_tables_olap import FactSales, FactInventory, DimTime, DimSizes, DimStores, DimItems, DimCustomers
+from dag_create_ecommerce_tables_olap import (
+    FactSales,
+    FactInventory,
+    DimTime,
+    DimSizes,
+    DimStores,
+    DimItems,
+    DimCustomers,
+)
+
 Base = declarative_base()
 
 

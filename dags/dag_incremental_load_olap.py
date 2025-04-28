@@ -26,6 +26,7 @@ dag = DAG(
     catchup=False,
 )
 
+
 def extract_task(**kwargs):
     last_execution_date = kwargs.get("prev_execution_date")
     if last_execution_date is None:
