@@ -514,7 +514,7 @@ class ETLIncremental(ETLBase):
         }
         extracted_data = {key: pd.read_sql(query, self.oltp_engine) for key, query in queries.items()}
         if extracted_data['purchases'].empty:
-            print("Nenhum novo registro encontrado em 'purchases'. Continuando com outras tabelas...")
+            raise ValueError('Nenhum novo registro encontrado para processar')
         return extracted_data
 
     def transform_dimensions(self, extracted_data):
