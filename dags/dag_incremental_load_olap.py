@@ -5,7 +5,6 @@ from airflow.operators.python import PythonOperator
 from utils.etl import ETLIncremental
 
 # Define the default arguments for the DAG
-# Configuração do DAG
 OLTP_URL = "postgresql+psycopg2://oltp:ecommerce123@postgres_oltp:5432/ecommerce_oltp"
 OLAP_URL = "postgresql+psycopg2://olap:ecommerce123@postgres_olap:5432/ecommerce_olap"
 etl = ETLIncremental(oltp_url=OLTP_URL, olap_url=OLAP_URL)
@@ -27,22 +26,17 @@ dag = DAG(
     catchup=False,
 )
 
-
-# Funções das tarefas
 def extract_task(**kwargs):
     last_execution_date = kwargs.get("prev_execution_date")
     if last_execution_date is None:
         last_execution_date = pendulum.datetime(2025, 4, 22, tz="America/Sao_Paulo")
     else:
-        # Converte prev_execution_date para pendulum.DateTime e ajusta o fuso horário
         last_execution_date = pendulum.instance(last_execution_date).astimezone(
             pendulum.timezone("America/Sao_Paulo")
         )
 
-    # Converte para UTC, já que o banco OLTP está em UTC
     last_execution_date_utc = last_execution_date.in_timezone("UTC")
 
-    # Logs para depuração
     print(f"prev_execution_date (original): {kwargs.get('prev_execution_date')}")
     print(f"last_execution_date (America/Sao_Paulo): {last_execution_date}")
     print(f"last_execution_date (UTC): {last_execution_date_utc}")
