@@ -195,6 +195,7 @@ class ETLBase(ABC):
         """
         # df_customers_addresses = extracted_data["customers_addresses"]
         # df_phones_customers = extracted_data["phones_customers"]
+        # df_phones_stores = extracted_data["phones_stores"]
         df_customers = extracted_data["customers"]
         df_addresses = extracted_data["addresses"]
         df_items = extracted_data["items"]
@@ -203,10 +204,8 @@ class ETLBase(ABC):
         df_stores = extracted_data["stores"]
         df_categories = extracted_data["categories"]
         df_stores_addresses = extracted_data["stores_addresses"]
-        # df_phones_stores = extracted_data["phones_stores"]
 
         dim_customers = df_customers
-        # dim_customers.drop(columns=['created_at'], inplace=True)
 
         dim_items = df_items
         dim_items.rename(columns={"id": "item_id"}, inplace=True)
@@ -283,16 +282,8 @@ class ETLBase(ABC):
     def extract(self):
         pass
 
-    # @abstractmethod
-    # def transform(self, extracted_data):
-    #     pass
 
-    # @abstractmethod
-    # def load(self, transformed_data):
-    #     pass
-
-
-class ETLInitial(ETLBase): #VOU PRECISAR DROPAR CREATED_AT DE UM MONTE DE TABELA
+class ETLInitial(ETLBase):
     """
     Class for initial load of the OLAP database.
     """
@@ -496,7 +487,7 @@ class ETLInitial(ETLBase): #VOU PRECISAR DROPAR CREATED_AT DE UM MONTE DE TABELA
 class ETLIncremental(ETLBase):
 
     def extract(self, last_execution_date):
-        """Extrai dados incrementais do OLTP com base na última data de execução."""
+        """Extracts incremental data from the OLTP based on the last execution date."""
         queries = {
             'customers': f"SELECT * FROM customers WHERE created_at > '{last_execution_date}'",
             'items': f"SELECT * FROM items WHERE created_at > '{last_execution_date}'",
@@ -514,37 +505,17 @@ class ETLIncremental(ETLBase):
         }
         extracted_data = {key: pd.read_sql(query, self.oltp_engine) for key, query in queries.items()}
         if extracted_data['purchases'].empty:
-            raise ValueError('Nenhum novo registro encontrado para processar')
+            raise ValueError('No new records found to process')
         return extracted_data
 
     def transform_dimensions(self, extracted_data):
-        """Transforma os dados extraídos em tabelas de dimensão."""
-        # df_customers = extracted_data['customers'].rename(columns={'id': 'customer_id'})
-        # df_items = extracted_data['items'].rename(columns={'id': 'item_id'})
-        # df_sizes = extracted_data['sizes'].rename(columns={'id': 'size_id'})
-        # df_stores = extracted_data['stores'].rename(columns={'id': 'store_id'})
-        # df_categories = extracted_data['categories']
+        """Transform the extracted data into dimension tables."""
+
         df_purchases = extracted_data['purchases']
 
         dim_customers, dim_items, dim_sizes, dim_stores = (
             self.transform_common_dimensions(extracted_data)
         )
-        # dim_customers
-        # dim_customers = df_customers[['customer_id', 'full_name', 'email', 'created_at']]
-
-        # # dim_items
-        # dim_items = pd.merge(df_items, df_categories, left_on='category_id', right_on='id', how='left')
-        # dim_items = dim_items.rename(columns={'name_x': 'name', 'name_y': 'category_name'})
-        # dim_items = dim_items[['item_id', 'name', 'category_name']]
-
-        # # dim_sizes
-        # dim_sizes = df_sizes[['size_id', 'size']]
-
-        # # dim_stores
-        # dim_stores = pd.merge(df_stores, extracted_data['stores_addresses'], on='store_id', how='left')
-        # dim_stores = pd.merge(dim_stores, extracted_data['addresses'], left_on='address_id', right_on='id', how='left')
-        # dim_stores['region'] = dim_stores['state'].map(lambda x: 'Unknown' if pd.isna(x) else x)  # Simplificado
-        # dim_stores = dim_stores[['store_id', 'name', 'city', 'state', 'zip_code', 'region']]
 
         # dim_time
         new_dates = pd.to_datetime(df_purchases['order_date']).dt.date.unique()
@@ -571,13 +542,13 @@ class ETLIncremental(ETLBase):
         }
 
     def load_dimensions(self, transformed_dimensions):
-        """Carrega as dimensões no OLAP com UPSERT ou INSERT ON CONFLICT."""
+        """Load the dimensions into the OLAP using UPSERT or INSERT ON CONFLICT."""
+        
         # dim_time
         dim_time_new = transformed_dimensions['dim_time']
         if not dim_time_new.empty:
             with Session(self.olap_engine) as session:
                 for _, row in dim_time_new.iterrows():
-                    # Cria um dicionário com os valores, excluindo date_id para permitir autoincrement
                     values = {
                         'date': row['date'],
                         'day': row['day'],
@@ -590,11 +561,11 @@ class ETLIncremental(ETLBase):
                     session.execute(stmt)
                 session.commit()
 
-        # Outras dimensões com UPSERT
+        # UPSERT
         dimensions = [
             ('dim_customers', DimCustomers, 'customer_id', ['full_name', 'email', 'created_at']),
             ('dim_items', DimItems, 'item_id', ['name', 'category_name']),
-            ('dim_sizes', DimSizes, 'size_id', ['size']),  # Corrigido 'name' para 'size'
+            ('dim_sizes', DimSizes, 'size_id', ['size']),
             ('dim_stores', DimStores, 'store_id', ['name', 'city', 'state', 'zip_code', 'region'])
         ]
         for table_name, model, pk, update_cols in dimensions:
@@ -611,7 +582,7 @@ class ETLIncremental(ETLBase):
                     session.commit()
 
     def transform_facts(self, extracted_data):
-        """Transforma os dados extraídos em tabelas de fatos."""
+        """Transform the extracted data into fact tables."""
         dim_time = pd.read_sql("SELECT date_id, date FROM dim_time", self.olap_engine)
         dim_time['date'] = pd.to_datetime(dim_time['date']).dt.date
 
@@ -628,8 +599,6 @@ class ETLIncremental(ETLBase):
             raise ValueError("Algumas datas de pedido não possuem date_id correspondente.")
         fact_sales = fact_sales.drop(columns=['date', 'order_date','created_at'])
         fact_sales.rename(columns={'id':'purchase_id'},inplace=True)
-
-
 
         fact_sales = pd.merge(fact_sales, df_purchases_status, on='purchase_id', how='inner')
         fact_sales = pd.merge(fact_sales, df_purchases_items, on='purchase_id', how='inner')
@@ -653,13 +622,13 @@ class ETLIncremental(ETLBase):
         return {'fact_sales': fact_sales, 'fact_inventory': fact_inventory}
 
     def load_facts(self, transformed_facts):
-        """Carrega as tabelas de fatos no OLAP com INSERT ON CONFLICT usando Session, em lotes."""
-        batch_size = 1000  # Ajuste o tamanho do lote conforme necessário
+        """Load the fact tables into the OLAP using INSERT ON CONFLICT with Session, in batches."""
+        batch_size = 1000
 
         # fact_sales
         df_sales = transformed_facts['fact_sales']
         if not df_sales.empty:
-            # Substitui nan por None na coluna customer_id (que é nullable)
+            # Replace nan with None in the customer_id column (which is nullable).
             df_sales['customer_id'] = df_sales['customer_id'].replace(np.nan, None)
 
             with Session(self.olap_engine) as session:
@@ -671,7 +640,7 @@ class ETLIncremental(ETLBase):
                     )
                     session.execute(stmt)
                 session.commit()
-            print(f"fact_sales carregada com sucesso: {len(df_sales)} linhas.")
+            print(f"fact_sales successfully loaded: {len(df_sales)} rows.")
 
         # fact_inventory
         df_inventory = transformed_facts['fact_inventory']
@@ -685,49 +654,47 @@ class ETLIncremental(ETLBase):
                     )
                     session.execute(stmt)
                 session.commit()
-            print(f"fact_inventory carregada com sucesso: {len(df_inventory)} linhas.")
+            print(f"fact_inventory successfully loaded: {len(df_inventory)} rows.")
 
 
 if __name__ == '__main__':
     OLTP_URL = "postgresql+psycopg2://oltp:ecommerce123@localhost:5433/ecommerce_oltp"
     OLAP_URL = "postgresql+psycopg2://olap:ecommerce123@localhost:5434/ecommerce_olap"  # local
 
-    # Instancia o ETLIncremental
+    # Instantiate ETLIncremental
     etl = ETLIncremental(oltp_url=OLTP_URL, olap_url=OLAP_URL)
 
-    # Simula a última data de execução (pode ajustar conforme necessário)
-    # Para simular a primeira execução, use uma data anterior aos dados no OLTP
-    last_execution_date = "2025-04-24 00:00:00"  # Ajuste para um timestamp real ou use a data atual menos um intervalo
-
-    # Tarefa 1: extract_op (equivalente a extract_task no DAG)
-    print("Iniciando tarefa extract_op...")
+    last_execution_date = "2025-04-24 00:00:00"
+    
+    # Task 1: extract_op (equivalent to extract_task in the DAG)
+    print("Starting extract_op task...")
     extracted_data = etl.extract(last_execution_date)
-    print("Extract concluído. Dados extraídos:")
+    print("Extract completed. Extracted data:")
     for key, df in extracted_data.items():
-        print(f"{key}: {df.shape[0]} linhas")
+        print(f"{key}: {df.shape[0]} rows")
 
-    # Tarefa 2: transform_dimensions_op (equivalente a transform_dimensions_task no DAG)
-    print("\nIniciando tarefa transform_dimensions_op...")
+    # Task 2: transform_dimensions_op (equivalent to transform_dimensions_task in the DAG)
+    print("\nStarting transform_dimensions_op task...")
     transformed_dimensions = etl.transform_dimensions(extracted_data)
-    print("Transformação de dimensões concluída. Dados transformados:")
+    print("Dimensions transformation completed. Transformed data:")
     for key, df in transformed_dimensions.items():
-        print(f"{key}: {df.shape[0]} linhas")
+        print(f"{key}: {df.shape[0]} rows")
 
-    # Tarefa 3: load_dimensions_op (equivalente a load_dimensions_task no DAG)
-    print("\nIniciando tarefa load_dimensions_op...")
+    # Task 3: load_dimensions_op (equivalent to load_dimensions_task in the DAG)
+    print("\nStarting load_dimensions_op task...")
     etl.load_dimensions(transformed_dimensions)
-    print("Carregamento de dimensões concluído.")
+    print("Dimensions loading completed.")
 
-    # Tarefa 4: transform_facts_op (equivalente a transform_facts_task no DAG)
-    print("\nIniciando tarefa transform_facts_op...")
+    # Task 4: transform_facts_op (equivalent to transform_facts_task in the DAG)
+    print("\nStarting transform_facts_op task...")
     transformed_facts = etl.transform_facts(extracted_data)
-    print("Transformação de fatos concluída. Dados transformados:")
+    print("Facts transformation completed. Transformed data:")
     for key, df in transformed_facts.items():
-        print(f"{key}: {df.shape[0]} linhas")
+        print(f"{key}: {df.shape[0]} rows")
 
-    # Tarefa 5: load_facts_op (equivalente a load_facts_task no DAG)
-    print("\nIniciando tarefa load_facts_op...")
+    # Task 5: load_facts_op (equivalent to load_facts_task in the DAG)
+    print("\nStarting load_facts_op task...")
     etl.load_facts(transformed_facts)
-    print("Carregamento de fatos concluído.")
+    print("Facts loading completed.")
 
-    print("\nPipeline ETLIncremental concluído com sucesso!")
+    print("\nETLIncremental pipeline completed successfully!")
