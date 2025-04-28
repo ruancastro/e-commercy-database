@@ -134,7 +134,7 @@ The ETL pipeline was implemented using **Apache Airflow**, with two main DAGs fo
 The ETL logic is encapsulated in the `etl.py` script, which defines two classes:
 
 - `ETLInitial`: Handles the initial load by dropping and recreating tables, then loading all data.
-- `ETLIncremental`: Handles incremental loads by filtering new data and appending it to existing tables.
+- `ETLIncremental`: Handles incremental loads by filtering new data and appending it to existing tables, using `ON CONFLICT DO NOTHING` to avoid duplicates.
 
 **Why Airflow?**
 
@@ -164,11 +164,13 @@ During the ETL process, several transformations were applied:
 - **Normalization to Denormalization**: The OLTP database is normalized (e.g., separate tables for addresses, phones). In the OLAP database, I denormalized the data into a star schema for faster analytical queries.
 - **Region Mapping**: Brazilian states were mapped to regions (e.g., "SP" → "Sudeste") using a dictionary in the `etl.py` script. I adjusted the regions to Portuguese (e.g., "Northeast" → "Nordeste") to reflect the Brazilian context.
 - **Time Dimension**: Created a `dim_time` table with attributes like day, month, quarter, and year to enable time-based analysis.
+- **Handling Null Values**: Adjusted the transformation logic to handle `NaN` values in nullable columns (e.g., `customer_id` in `fact_sales`), converting them to `None` for proper insertion into the OLAP database.
 
 **Why These Transformations?**
 
 - **Analytical Readiness**: The transformations ensure the OLAP database is optimized for reporting (e.g., aggregations by region, time).
-- **Cultural Relevance**: Using Portuguese region names aligns with the Brazilian context, making the data more meaningful for local stakeholders.
+- **Cultural Relevance**: Using Portuguese region names aligns  with the Brazilian context, making the data more meaningful for local stakeholders.
+- **Data Integrity**: Handling `NaN` values ensures compatibility with the database schema and prevents insertion errors.
 
 ### 9. Error Handling and Debugging
 
@@ -176,12 +178,14 @@ Throughout the project, I encountered and resolved several issues:
 
 - **String Length Mismatch**: Fixed an error where the `size` column in the OLAP database had a length constraint (`VARCHAR(4)`) that was too small for values like "Pequeno". I increased it to `VARCHAR(10)`.
 - **Region Naming Inconsistency**: Corrected a mismatch between the region names in the transformation logic ("North East") and the schema constraint ("Northeast"), later adjusting to Portuguese ("Nordeste").
-- **Logging**: Used Airflow logs to debug issues, ensuring each task printed meaningful messages (e.g., "Table dim_stores successfully loaded into OLAP").
+- **Numeric Value Out of Range Error**: Encountered a `psycopg2.errors.NumericValueOutOfRange` error when loading data into `fact_sales`. The issue was caused by `NaN` values in the `customer_id` column (a nullable `INTEGER` field), which PostgreSQL couldn't handle. I resolved this by converting `NaN` to `None` before insertion and rewrote the `load_facts` method to use SQLAlchemy's `Session` for better handling of nullable fields.
+- **Timezone Mismatch in Incremental Loads**: Faced issues with the incremental load DAG (`dag_incremental_load_olap.py`) failing due to a timezone mismatch between the Airflow DAG (configured in `America/Sao_Paulo`) and the OLTP database (in `UTC`). This caused the `created_at` comparisons to fail, resulting in no new records being extracted. I fixed this by explicitly converting the `last_execution_date` to UTC before querying the OLTP database, ensuring accurate incremental data extraction.
+- **Logging Enhancements**: Added detailed logs in the `extract` and `load_facts` methods to track the number of new records extracted and loaded, as well as their `created_at` timestamps, improving visibility into the pipeline's behavior.
 
 **Why This Matters?**
 
 - **Reliability**: Proper error handling ensures the pipeline is robust and can recover from failures.
-- **Debugging Skills**: Highlighting these fixes in my portfolio shows my ability to troubleshoot and improve systems.
+- **Debugging Skills**: Highlighting these fixes in my portfolio shows my ability to troubleshoot complex issues, such as timezone mismatches and database errors, and implement effective solutions.
 
 ### 10. Deployment with Docker
 
@@ -246,7 +250,14 @@ The project is containerized using **Docker** and **Docker Compose**:
 5. **Monitor Execution**:
 
    - Check the Airflow UI for task logs and status.
-   - Verify the data in the OLTP and OLAP databases using a PostgreSQL client (e.g., pgAdmin).
+   - Verify the data in the OLTP and OLAP databases using a PostgreSQL client (e.g., pgAdmin). To confirm incremental loads, query the `fact_sales` table with the `created_at` column:
+
+     ```
+     SELECT purchase_id, created_at
+     FROM fact_sales
+     WHERE created_at > 'YYYY-MM-DD HH:MM:SS'
+     ORDER BY created_at DESC;
+     ```
 
 ---
 
@@ -255,16 +266,19 @@ The project is containerized using **Docker** and **Docker Compose**:
 - **Schema Design**: Using Draw.io helped me plan the database structure effectively, ensuring the OLTP and OLAP databases met their respective goals (transactional vs. analytical).
 - **ETL Orchestration**: Airflow's DAGs and XCom made it easy to manage the ETL pipeline, but I learned to be cautious with XCom for large datasets.
 - **Data Generation**: Generating realistic Brazilian data (e.g., addresses, regions in Portuguese) added authenticity to the project.
-- **Debugging**: Resolving errors like string length mismatches and region naming inconsistencies improved my problem-solving skills.
+- **Debugging Complex Issues**: Resolving timezone mismatches between Airflow and the OLTP database, handling `NaN` values in nullable columns, and adjusting the incremental load logic to be more robust significantly improved my problem-solving skills.
+- **Importance of Logging**: Adding detailed logs at each stage of the pipeline (e.g., in `extract` and `load_facts`) was crucial for debugging and verifying the correct behavior of incremental loads.
+- **Timezone Handling**: Learned the importance of aligning timestamps across systems, especially when working with databases and orchestration tools in different timezones.
 
 ---
 
 ## Future Improvements
 
 - **Optimize XCom Usage**: For larger datasets, save intermediate data to an external storage (e.g., S3) and pass file paths via XCom.
-- **Add Data Quality Checks**: Implement validation tasks to ensure data consistency before loading into the OLAP database.
+- **Add Data Quality Checks**: Implement validation tasks to ensure data consistency before loading into the OLAP database (e.g., checking for missing foreign keys).
 - **Expand Analytical Capabilities**: Integrate the OLAP database with a BI tool (e.g., Power BI, Tableau) to create dashboards for sales and inventory analysis.
 - **Automate Data Generation**: Schedule the `register_purchases_and_clients` DAG to run periodically, simulating continuous e-commerce activity.
+- **Monitoring and Alerts**: Add monitoring tasks to the DAG to alert on failures or unexpected behavior (e.g., no new records for an extended period).
 
 ---
 
@@ -412,7 +426,7 @@ O pipeline ETL foi implementado usando o **Apache Airflow**, com duas DAGs princ
 A lógica ETL está encapsulada no script `etl.py`, que define duas classes:
 
 - `ETLInitial`: Gerencia a carga inicial, apagando e recriando tabelas, e depois carregando todos os dados.
-- `ETLIncremental`: Gerencia cargas incrementais, filtrando dados novos e adicionando-os às tabelas existentes.
+- `ETLIncremental`: Gerencia cargas incrementais, filtrando dados novos e adicionando-os às tabelas existentes, usando `ON CONFLICT DO NOTHING` para evitar duplicatas.
 
 **Por que o Airflow?**
 
@@ -442,11 +456,13 @@ Durante o processo ETL, várias transformações foram aplicadas:
 - **Normalização para Desnormalização**: O banco OLTP é normalizado (ex.: tabelas separadas para endereços, telefones). No banco OLAP, desnormalizei os dados em um esquema em estrela para consultas analíticas mais rápidas.
 - **Mapeamento de Regiões**: Estados brasileiros foram mapeados para regiões (ex.: "SP" → "Sudeste") usando um dicionário no script `etl.py`. Ajustei as regiões para português (ex.: "Northeast" → "Nordeste") para refletir o contexto brasileiro.
 - **Dimensão de Tempo**: Criei uma tabela `dim_time` com atributos como dia, mês, trimestre e ano para permitir análises baseadas em tempo.
+- **Tratamento de Valores Nulos**: Ajustei a lógica de transformação para lidar com valores `NaN` em colunas que permitem nulos (ex.: `customer_id` em `fact_sales`), convertendo-os para `None` para inserção correta no banco OLAP.
 
 **Por que Essas Transformações?**
 
 - **Prontidão Analítica**: As transformações garantem que o banco OLAP esteja otimizado para relatórios (ex.: agregações por região, tempo).
 - **Relevância Cultural**: Usar nomes de regiões em português alinha os dados ao contexto brasileiro, tornando-os mais significativos para stakeholders locais.
+- **Integridade dos Dados**: O tratamento de valores `NaN` garante compatibilidade com o esquema do banco e evita erros de inserção.
 
 ### 9. Tratamento de Erros e Depuração
 
@@ -454,12 +470,15 @@ Ao longo do projeto, encontrei e resolvi vários problemas:
 
 - **Inconsistência de Tamanho de String**: Corrigi um erro em que a coluna `size` no banco OLAP tinha uma restrição de tamanho (`VARCHAR(4)`) muito pequena para valores como "Pequeno". Aumentei para `VARCHAR(10)`.
 - **Inconsistência de Nomenclatura de Regiões**: Corrigi uma incompatibilidade entre os nomes de regiões na lógica de transformação ("North East") e a restrição do esquema ("Northeast"), posteriormente ajustando para português ("Nordeste").
-- **Logs**: Utilizei os logs do Airflow para depurar problemas, garantindo que cada tarefa imprimisse mensagens significativas (ex.: "Table dim_stores successfully loaded into OLAP").
+- **Erro de Valor Numérico Fora do Intervalo**: Encontrei um erro `psycopg2.errors.NumericValueOutOfRange` ao carregar dados em `fact_sales`. O problema foi causado por valores `NaN` na coluna `customer_id` (um campo `INTEGER` que permite nulos), que o PostgreSQL não conseguia processar. Resolvi isso convertendo `NaN` para `None` antes da inserção e reescrevi o método `load_facts` para usar o `Session` do SQLAlchemy, que lida melhor com campos que permitem nulos.
+- **Inconsistência de Fuso Horário em Cargas Incrementais**: Tive problemas com a DAG de carga incremental (`dag_incremental_load_olap.py`) que falhava devido a uma incompatibilidade de fuso horário entre a DAG do Airflow (configurada em `America/Sao_Paulo`) e o banco OLTP (em `UTC`). Isso causava falhas nas comparações de `created_at`, resultando na não extração de novos registros. Corrigi isso convertendo explicitamente o `last_execution_date` para UTC antes de consultar o banco OLTP, garantindo uma extração incremental precisa.
+- **Condição de Parada da Carga Incremental**: Inicialmente, o método `extract` em `ETLIncremental` lançava um erro (`ValueError: Nenhum novo registro encontrado para processar`) se não encontrasse novos registros em `purchases`, interrompendo a DAG. Isso era muito restritivo para um pipeline incremental. Modifiquei a lógica para registrar uma mensagem e continuar processando outras tabelas (ex.: `inventory`, `customers`), permitindo que a DAG fosse concluída com sucesso mesmo quando não havia novas compras.
+- **Melhorias nos Logs**: Adicionei logs detalhados nos métodos `extract` e `load_facts` para rastrear o número de novos registros extraídos e carregados, bem como seus timestamps `created_at`, melhorando a visibilidade do comportamento do pipeline.
 
 **Por que Isso Importa?**
 
 - **Confiabilidade**: O tratamento adequado de erros garante que o pipeline seja robusto e possa se recuperar de falhas.
-- **Habilidades de Depuração**: Destacar essas correções no meu portfólio mostra minha capacidade de solucionar problemas e melhorar sistemas.
+- **Habilidades de Depuração**: Destacar essas correções no meu portfólio mostra minha capacidade de solucionar problemas complexos, como incompatibilidades de fuso horário e erros de banco de dados, e implementar soluções eficazes.
 
 ### 10. Implantação com Docker
 
@@ -472,7 +491,6 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
 
 - **Reprodutibilidade**: O Docker garante que o projeto possa rodar em qualquer máquina com o mesmo ambiente.
 - **Portabilidade**: Facilita o compartilhamento e a implantação do projeto, uma habilidade essencial para um engenheiro de dados.
-
 ---
 
 ## Como Executar o Projeto
@@ -524,7 +542,14 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
 5. **Monitorar a Execução**:
 
    - Verifique os logs e o status das tarefas na interface do Airflow.
-   - Confirme os dados nos bancos OLTP e OLAP usando um cliente PostgreSQL (ex.: pgAdmin).
+   - Confirme os dados nos bancos OLTP e OLAP usando um cliente PostgreSQL (ex.: pgAdmin). Para verificar cargas incrementais, consulte a tabela `fact_sales` com a coluna `created_at`:
+
+     ```
+     SELECT purchase_id, created_at
+     FROM fact_sales
+     WHERE created_at > 'YYYY-MM-DD HH:MM:SS'
+     ORDER BY created_at DESC;
+     ```
 
 ---
 
@@ -533,16 +558,19 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
 - **Design de Esquema**: Usar o Draw.io me ajudou a planejar a estrutura do banco de dados de forma eficaz, garantindo que os bancos OLTP e OLAP atendessem aos seus respectivos objetivos (transacional vs. analítico).
 - **Orquestração ETL**: As DAGs e o XCom do Airflow facilitaram o gerenciamento do pipeline ETL, mas aprendi a ter cuidado com o XCom para grandes conjuntos de dados.
 - **Geração de Dados**: Gerar dados brasileiros realistas (ex.: endereços, regiões em português) adicionou autenticidade ao projeto.
-- **Depuração**: Resolver erros como incompatibilidades de tamanho de string e nomenclatura de regiões melhorou minhas habilidades de resolução de problemas.
+- **Depuração de Problemas Complexos**: Resolver incompatibilidades de fuso horário entre o Airflow e o banco OLTP, lidar com valores `NaN` em colunas que permitem nulos e ajustar a lógica de carga incremental para ser mais robusta melhorou significativamente minhas habilidades de resolução de problemas.
+- **Importância dos Logs**: Adicionar logs detalhados em cada etapa do pipeline (ex.: em `extract` e `load_facts`) foi crucial para depurar e verificar o comportamento correto das cargas incrementais.
+- **Gerenciamento de Fuso Horário**: Aprendi a importância de alinhar timestamps entre sistemas, especialmente ao trabalhar com bancos de dados e ferramentas de orquestração em fusos horários diferentes.
 
 ---
 
 ## Melhorias Futuras
 
 - **Otimizar o Uso do XCom**: Para grandes conjuntos de dados, salvar dados intermediários em um armazenamento externo (ex.: S3) e passar os caminhos dos arquivos via XCom.
-- **Adicionar Verificações de Qualidade de Dados**: Implementar tarefas de validação para garantir a consistência dos dados antes de carregar no banco OLAP.
+- **Adicionar Verificações de Qualidade de Dados**: Implementar tarefas de validação para garantir a consistência dos dados antes de carregar no banco OLAP (ex.: verificar chaves estrangeiras ausentes).
 - **Expandir Capacidades Analíticas**: Integrar o banco OLAP com uma ferramenta de BI (ex.: Power BI, Tableau) para criar dashboards de análise de vendas e estoque.
 - **Automatizar a Geração de Dados**: Agendar a DAG `register_purchases_and_clients` para rodar periodicamente, simulando atividade contínua de e-commerce.
+- **Monitoramento e Alertas**: Adicionar tarefas de monitoramento à DAG para alertar sobre falhas ou comportamentos inesperados (ex.: ausência de novos registros por um período prolongado).
 
 ---
 
