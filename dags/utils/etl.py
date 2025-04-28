@@ -215,10 +215,12 @@ class ETLBase(ABC):
         dim_items.rename(
             columns={"name_x": "name", "name_y": "category_name"}, inplace=True
         )
-        dim_items.drop(columns={"category_id", "id",'created_at_x','created_at_y'}, inplace=True)
+        dim_items.drop(
+            columns={"category_id", "id", "created_at_x", "created_at_y"}, inplace=True
+        )
 
         dim_sizes = df_sizes.rename(columns={"id": "size_id"})
-        dim_sizes.drop(columns={'created_at'}, inplace=True)
+        dim_sizes.drop(columns={"created_at"}, inplace=True)
 
         dim_stores = df_stores.rename(columns={"id": "store_id"})
         dim_stores.drop(columns={"email"}, inplace=True)
@@ -274,7 +276,9 @@ class ETLBase(ABC):
             "TO": "Norte",
         }
         dim_stores["region"] = dim_stores["state"].map(state_to_region)
-        dim_stores.drop(columns=['created_at','created_at_x', 'created_at_y'],inplace=True)
+        dim_stores.drop(
+            columns=["created_at", "created_at_x", "created_at_y"], inplace=True
+        )
 
         return dim_customers, dim_items, dim_sizes, dim_stores
 
@@ -447,41 +451,54 @@ class ETLInitial(ETLBase):
             else:
                 print(f"Table {table_name} is empty or was not provided.")
 
-        # Passo 3: Sincroniza as sequências para campos com autoincrement
         with Session(self.olap_engine) as session:
-            # Sincroniza a sequência de dim_time.date_id
+            # Synchronize the dim_time.date_id sequence
             max_date_id = session.execute("SELECT MAX(date_id) FROM dim_time").scalar()
-            max_date_id = max_date_id if max_date_id is not None else 0  # Caso a tabela esteja vazia, começa em 1
+            max_date_id = max_date_id if max_date_id is not None else 0
             session.execute(f"SELECT setval('dim_time_date_id_seq', {max_date_id + 1})")
-            print(f"Sequência dim_time_date_id_seq ajustada para {max_date_id + 1}")
+            print(f"dim_time_date_id_seq sequence adjusted to {max_date_id + 1}")
 
-            # Sincroniza outras sequências, se necessário
+            # Synchronize other sequences, if necessary
             # dim_customers.customer_id
-            max_customer_id = session.execute("SELECT MAX(customer_id) FROM dim_customers").scalar()
+            max_customer_id = session.execute(
+                "SELECT MAX(customer_id) FROM dim_customers"
+            ).scalar()
             max_customer_id = max_customer_id if max_customer_id is not None else 0
-            session.execute(f"SELECT setval('dim_customers_customer_id_seq', {max_customer_id + 1})")
-            print(f"Sequência dim_customers_customer_id_seq ajustada para {max_customer_id + 1}")
+            session.execute(
+                f"SELECT setval('dim_customers_customer_id_seq', {max_customer_id + 1})"
+            )
+            print(
+                f"dim_customers, customer_id_seq sequence adjusted to {max_customer_id + 1}"
+            )
 
             # dim_items.item_id
             max_item_id = session.execute("SELECT MAX(item_id) FROM dim_items").scalar()
             max_item_id = max_item_id if max_item_id is not None else 0
-            session.execute(f"SELECT setval('dim_items_item_id_seq', {max_item_id + 1})")
-            print(f"Sequência dim_items_item_id_seq ajustada para {max_item_id + 1}")
+            session.execute(
+                f"SELECT setval('dim_items_item_id_seq', {max_item_id + 1})"
+            )
+            print(f"dim_items_item_id_seq sequence adjusted to {max_item_id + 1}")
 
             # dim_sizes.size_id
             max_size_id = session.execute("SELECT MAX(size_id) FROM dim_sizes").scalar()
             max_size_id = max_size_id if max_size_id is not None else 0
-            session.execute(f"SELECT setval('dim_sizes_size_id_seq', {max_size_id + 1})")
-            print(f"Sequência dim_sizes_size_id_seq ajustada para {max_size_id + 1}")
+            session.execute(
+                f"SELECT setval('dim_sizes_size_id_seq', {max_size_id + 1})"
+            )
+            print(f"dim_sizes_size_id_seq sequence adjusted to {max_size_id + 1}")
 
             # dim_stores.store_id
-            max_store_id = session.execute("SELECT MAX(store_id) FROM dim_stores").scalar()
+            max_store_id = session.execute(
+                "SELECT MAX(store_id) FROM dim_stores"
+            ).scalar()
             max_store_id = max_store_id if max_store_id is not None else 0
-            session.execute(f"SELECT setval('dim_stores_store_id_seq', {max_store_id + 1})")
-            print(f"Sequência dim_stores_store_id_seq ajustada para {max_store_id + 1}")
+            session.execute(
+                f"SELECT setval('dim_stores_store_id_seq', {max_store_id + 1})"
+            )
+            print(f"dim_stores_store_id_seq sequence adjusted to {max_store_id + 1}")
 
             session.commit()
-        print("Todas as sequências foram sincronizadas com sucesso.")
+        print("All sequences were successfully synchronized.")
 
 
 class ETLIncremental(ETLBase):
@@ -489,84 +506,104 @@ class ETLIncremental(ETLBase):
     def extract(self, last_execution_date):
         """Extracts incremental data from the OLTP based on the last execution date."""
         queries = {
-            'customers': f"SELECT * FROM customers WHERE created_at > '{last_execution_date}'",
-            'items': f"SELECT * FROM items WHERE created_at > '{last_execution_date}'",
-            'sizes': f"SELECT * FROM sizes WHERE created_at > '{last_execution_date}'",
-            'stores': f"SELECT * FROM stores WHERE created_at > '{last_execution_date}'",
-            'categories': f"SELECT * FROM categories WHERE created_at > '{last_execution_date}'",
-            'purchases': f"SELECT * FROM purchases WHERE created_at > '{last_execution_date}'",
-            'purchases_status': f"SELECT * FROM purchases_status WHERE created_at > '{last_execution_date}'",
-            'purchases_items': f"SELECT * FROM purchases_items WHERE created_at > '{last_execution_date}'",
-            'prices': f"SELECT * FROM prices WHERE created_at > '{last_execution_date}'",
-            'items_sizes': f"SELECT * FROM items_sizes WHERE created_at > '{last_execution_date}'",
-            'inventory': f"SELECT * FROM inventory WHERE created_at > '{last_execution_date}'",
-            'stores_addresses': f"SELECT * FROM stores_addresses WHERE created_at > '{last_execution_date}'",
-            'addresses': f"SELECT * FROM addresses WHERE created_at > '{last_execution_date}'"
+            "customers": f"SELECT * FROM customers WHERE created_at > '{last_execution_date}'",
+            "items": f"SELECT * FROM items WHERE created_at > '{last_execution_date}'",
+            "sizes": f"SELECT * FROM sizes WHERE created_at > '{last_execution_date}'",
+            "stores": f"SELECT * FROM stores WHERE created_at > '{last_execution_date}'",
+            "categories": f"SELECT * FROM categories WHERE created_at > '{last_execution_date}'",
+            "purchases": f"SELECT * FROM purchases WHERE created_at > '{last_execution_date}'",
+            "purchases_status": f"SELECT * FROM purchases_status WHERE created_at > '{last_execution_date}'",
+            "purchases_items": f"SELECT * FROM purchases_items WHERE created_at > '{last_execution_date}'",
+            "prices": f"SELECT * FROM prices WHERE created_at > '{last_execution_date}'",
+            "items_sizes": f"SELECT * FROM items_sizes WHERE created_at > '{last_execution_date}'",
+            "inventory": f"SELECT * FROM inventory WHERE created_at > '{last_execution_date}'",
+            "stores_addresses": f"SELECT * FROM stores_addresses WHERE created_at > '{last_execution_date}'",
+            "addresses": f"SELECT * FROM addresses WHERE created_at > '{last_execution_date}'",
         }
-        extracted_data = {key: pd.read_sql(query, self.oltp_engine) for key, query in queries.items()}
-        if extracted_data['purchases'].empty:
-            raise ValueError('No new records found to process')
+        extracted_data = {
+            key: pd.read_sql(query, self.oltp_engine) for key, query in queries.items()
+        }
+        if extracted_data["purchases"].empty:
+            raise ValueError("No new records found to process")
         return extracted_data
 
     def transform_dimensions(self, extracted_data):
         """Transform the extracted data into dimension tables."""
 
-        df_purchases = extracted_data['purchases']
+        df_purchases = extracted_data["purchases"]
 
         dim_customers, dim_items, dim_sizes, dim_stores = (
             self.transform_common_dimensions(extracted_data)
         )
 
         # dim_time
-        new_dates = pd.to_datetime(df_purchases['order_date']).dt.date.unique()
+        new_dates = pd.to_datetime(df_purchases["order_date"]).dt.date.unique()
         existing_dates_df = pd.read_sql("SELECT date FROM dim_time", self.olap_engine)
-        existing_dates_df['date'] = pd.to_datetime(existing_dates_df['date'], errors='coerce')
-        
-        existing_dates = existing_dates_df['date'].dt.date.unique()
+        existing_dates_df["date"] = pd.to_datetime(
+            existing_dates_df["date"], errors="coerce"
+        )
+
+        existing_dates = existing_dates_df["date"].dt.date.unique()
         new_dates = [d for d in new_dates if d not in existing_dates]
-        dim_time_new = pd.DataFrame({
-            'date': new_dates,
-            'day': [d.day for d in new_dates],
-            'month': [d.month for d in new_dates],
-            'quarter': [((d.month - 1) // 3) + 1 for d in new_dates],
-            'year': [d.year for d in new_dates],
-            'is_weekend': [d.weekday() >= 5 for d in new_dates],
-        })
+        dim_time_new = pd.DataFrame(
+            {
+                "date": new_dates,
+                "day": [d.day for d in new_dates],
+                "month": [d.month for d in new_dates],
+                "quarter": [((d.month - 1) // 3) + 1 for d in new_dates],
+                "year": [d.year for d in new_dates],
+                "is_weekend": [d.weekday() >= 5 for d in new_dates],
+            }
+        )
 
         return {
-            'dim_customers': dim_customers,
-            'dim_items': dim_items,
-            'dim_sizes': dim_sizes,
-            'dim_stores': dim_stores,
-            'dim_time': dim_time_new
+            "dim_customers": dim_customers,
+            "dim_items": dim_items,
+            "dim_sizes": dim_sizes,
+            "dim_stores": dim_stores,
+            "dim_time": dim_time_new,
         }
 
     def load_dimensions(self, transformed_dimensions):
         """Load the dimensions into the OLAP using UPSERT or INSERT ON CONFLICT."""
-        
+
         # dim_time
-        dim_time_new = transformed_dimensions['dim_time']
+        dim_time_new = transformed_dimensions["dim_time"]
         if not dim_time_new.empty:
             with Session(self.olap_engine) as session:
                 for _, row in dim_time_new.iterrows():
                     values = {
-                        'date': row['date'],
-                        'day': row['day'],
-                        'month': row['month'],
-                        'quarter': row['quarter'],
-                        'year': row['year'],
-                        'is_weekend': row['is_weekend']
+                        "date": row["date"],
+                        "day": row["day"],
+                        "month": row["month"],
+                        "quarter": row["quarter"],
+                        "year": row["year"],
+                        "is_weekend": row["is_weekend"],
                     }
-                    stmt = insert(DimTime).values(**values).on_conflict_do_nothing(index_elements=['date'])
+                    stmt = (
+                        insert(DimTime)
+                        .values(**values)
+                        .on_conflict_do_nothing(index_elements=["date"])
+                    )
                     session.execute(stmt)
                 session.commit()
 
         # UPSERT
         dimensions = [
-            ('dim_customers', DimCustomers, 'customer_id', ['full_name', 'email', 'created_at']),
-            ('dim_items', DimItems, 'item_id', ['name', 'category_name']),
-            ('dim_sizes', DimSizes, 'size_id', ['size']),
-            ('dim_stores', DimStores, 'store_id', ['name', 'city', 'state', 'zip_code', 'region'])
+            (
+                "dim_customers",
+                DimCustomers,
+                "customer_id",
+                ["full_name", "email", "created_at"],
+            ),
+            ("dim_items", DimItems, "item_id", ["name", "category_name"]),
+            ("dim_sizes", DimSizes, "size_id", ["size"]),
+            (
+                "dim_stores",
+                DimStores,
+                "store_id",
+                ["name", "city", "state", "zip_code", "region"],
+            ),
         ]
         for table_name, model, pk, update_cols in dimensions:
             df = transformed_dimensions[table_name]
@@ -574,9 +611,13 @@ class ETLIncremental(ETLBase):
                 with Session(self.olap_engine) as session:
                     for _, row in df.iterrows():
                         data = row.to_dict()
-                        stmt = insert(model).values(**data).on_conflict_do_update(
-                            index_elements=[pk],
-                            set_={col: data[col] for col in update_cols}
+                        stmt = (
+                            insert(model)
+                            .values(**data)
+                            .on_conflict_do_update(
+                                index_elements=[pk],
+                                set_={col: data[col] for col in update_cols},
+                            )
                         )
                         session.execute(stmt)
                     session.commit()
@@ -584,88 +625,136 @@ class ETLIncremental(ETLBase):
     def transform_facts(self, extracted_data):
         """Transform the extracted data into fact tables."""
         dim_time = pd.read_sql("SELECT date_id, date FROM dim_time", self.olap_engine)
-        dim_time['date'] = pd.to_datetime(dim_time['date']).dt.date
+        dim_time["date"] = pd.to_datetime(dim_time["date"]).dt.date
 
         # fact_sales
-        df_purchases = extracted_data['purchases']
-        df_purchases_status = extracted_data['purchases_status']
-        df_purchases_items = extracted_data['purchases_items']
-        df_prices = extracted_data['prices']
+        df_purchases = extracted_data["purchases"]
+        df_purchases_status = extracted_data["purchases_status"]
+        df_purchases_items = extracted_data["purchases_items"]
+        df_prices = extracted_data["prices"]
 
-        df_purchases['order_date'] = pd.to_datetime(df_purchases['order_date']).dt.date
-        
-        fact_sales = pd.merge(df_purchases, dim_time[['date', 'date_id']], left_on='order_date', right_on='date', how='left')
-        if fact_sales['date_id'].isnull().any():
-            raise ValueError("Algumas datas de pedido não possuem date_id correspondente.")
-        fact_sales = fact_sales.drop(columns=['date', 'order_date','created_at'])
-        fact_sales.rename(columns={'id':'purchase_id'},inplace=True)
+        df_purchases["order_date"] = pd.to_datetime(df_purchases["order_date"]).dt.date
 
-        fact_sales = pd.merge(fact_sales, df_purchases_status, on='purchase_id', how='inner')
-        fact_sales = pd.merge(fact_sales, df_purchases_items, on='purchase_id', how='inner')
-        fact_sales = pd.merge(fact_sales, df_prices, on=['item_id', 'size_id'], how='inner')
-        fact_sales = fact_sales.drop(columns=['created_at_x','created_at_y'])
-        fact_sales['line_value'] = fact_sales['value'] * fact_sales['quantity']
-        fact_sales = fact_sales.rename(columns={'quantity': 'quantity_sold','status':'purchase_status','quantity':'quantity_sold'})
-        fact_sales = fact_sales[['purchase_id', 'item_id', 'size_id', 'customer_id', 'store_id', 'date_id', 'purchase_status', 'line_value', 'quantity_sold']]
+        fact_sales = pd.merge(
+            df_purchases,
+            dim_time[["date", "date_id"]],
+            left_on="order_date",
+            right_on="date",
+            how="left",
+        )
+        if fact_sales["date_id"].isnull().any():
+            raise ValueError(
+                "Algumas datas de pedido não possuem date_id correspondente."
+            )
+        fact_sales = fact_sales.drop(columns=["date", "order_date", "created_at"])
+        fact_sales.rename(columns={"id": "purchase_id"}, inplace=True)
+
+        fact_sales = pd.merge(
+            fact_sales, df_purchases_status, on="purchase_id", how="inner"
+        )
+        fact_sales = pd.merge(
+            fact_sales, df_purchases_items, on="purchase_id", how="inner"
+        )
+        fact_sales = pd.merge(
+            fact_sales, df_prices, on=["item_id", "size_id"], how="inner"
+        )
+        fact_sales = fact_sales.drop(columns=["created_at_x", "created_at_y"])
+        fact_sales["line_value"] = fact_sales["value"] * fact_sales["quantity"]
+        fact_sales = fact_sales.rename(
+            columns={
+                "quantity": "quantity_sold",
+                "status": "purchase_status",
+                "quantity": "quantity_sold",
+            }
+        )
+        fact_sales = fact_sales[
+            [
+                "purchase_id",
+                "item_id",
+                "size_id",
+                "customer_id",
+                "store_id",
+                "date_id",
+                "purchase_status",
+                "line_value",
+                "quantity_sold",
+            ]
+        ]
 
         # fact_inventory
         current_date = datetime.now().date()
-        current_date_id = dim_time[dim_time['date'] == current_date]['date_id'].iloc[0]
-        df_items_sizes = extracted_data['items_sizes']
-        df_inventory = extracted_data['inventory']
-        
-        fact_inventory = pd.merge(df_items_sizes, df_inventory, on=['item_id', 'size_id'], how='right')
-        fact_inventory['date_id'] = current_date_id
-        fact_inventory = fact_inventory.rename(columns={'quantity':'quantity_in_stock'})
-        fact_inventory = fact_inventory[['item_id', 'size_id', 'store_id', 'date_id', 'quantity_in_stock']]
+        current_date_id = dim_time[dim_time["date"] == current_date]["date_id"].iloc[0]
+        df_items_sizes = extracted_data["items_sizes"]
+        df_inventory = extracted_data["inventory"]
 
-        return {'fact_sales': fact_sales, 'fact_inventory': fact_inventory}
+        fact_inventory = pd.merge(
+            df_items_sizes, df_inventory, on=["item_id", "size_id"], how="right"
+        )
+        fact_inventory["date_id"] = current_date_id
+        fact_inventory = fact_inventory.rename(
+            columns={"quantity": "quantity_in_stock"}
+        )
+        fact_inventory = fact_inventory[
+            ["item_id", "size_id", "store_id", "date_id", "quantity_in_stock"]
+        ]
+
+        return {"fact_sales": fact_sales, "fact_inventory": fact_inventory}
 
     def load_facts(self, transformed_facts):
         """Load the fact tables into the OLAP using INSERT ON CONFLICT with Session, in batches."""
         batch_size = 1000
 
         # fact_sales
-        df_sales = transformed_facts['fact_sales']
+        df_sales = transformed_facts["fact_sales"]
         if not df_sales.empty:
             # Replace nan with None in the customer_id column (which is nullable).
-            df_sales['customer_id'] = df_sales['customer_id'].replace(np.nan, None)
+            df_sales["customer_id"] = df_sales["customer_id"].replace(np.nan, None)
 
             with Session(self.olap_engine) as session:
                 for start in range(0, len(df_sales), batch_size):
-                    batch = df_sales[start:start + batch_size]
+                    batch = df_sales[start : start + batch_size]
                     values = [row.to_dict() for _, row in batch.iterrows()]
-                    stmt = insert(FactSales).values(values).on_conflict_do_nothing(
-                        index_elements=['purchase_id', 'item_id', 'size_id']
+                    stmt = (
+                        insert(FactSales)
+                        .values(values)
+                        .on_conflict_do_nothing(
+                            index_elements=["purchase_id", "item_id", "size_id"]
+                        )
                     )
                     session.execute(stmt)
                 session.commit()
             print(f"fact_sales successfully loaded: {len(df_sales)} rows.")
 
         # fact_inventory
-        df_inventory = transformed_facts['fact_inventory']
+        df_inventory = transformed_facts["fact_inventory"]
         if not df_inventory.empty:
             with Session(self.olap_engine) as session:
                 for start in range(0, len(df_inventory), batch_size):
-                    batch = df_inventory[start:start + batch_size]
+                    batch = df_inventory[start : start + batch_size]
                     values = [row.to_dict() for _, row in batch.iterrows()]
-                    stmt = insert(FactInventory).values(values).on_conflict_do_nothing(
-                        index_elements=['item_id', 'size_id', 'store_id', 'date_id']
+                    stmt = (
+                        insert(FactInventory)
+                        .values(values)
+                        .on_conflict_do_nothing(
+                            index_elements=["item_id", "size_id", "store_id", "date_id"]
+                        )
                     )
                     session.execute(stmt)
                 session.commit()
             print(f"fact_inventory successfully loaded: {len(df_inventory)} rows.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     OLTP_URL = "postgresql+psycopg2://oltp:ecommerce123@localhost:5433/ecommerce_oltp"
-    OLAP_URL = "postgresql+psycopg2://olap:ecommerce123@localhost:5434/ecommerce_olap"  # local
+    OLAP_URL = (
+        "postgresql+psycopg2://olap:ecommerce123@localhost:5434/ecommerce_olap"  # local
+    )
 
     # Instantiate ETLIncremental
     etl = ETLIncremental(oltp_url=OLTP_URL, olap_url=OLAP_URL)
 
     last_execution_date = "2025-04-24 00:00:00"
-    
+
     # Task 1: extract_op (equivalent to extract_task in the DAG)
     print("Starting extract_op task...")
     extracted_data = etl.extract(last_execution_date)

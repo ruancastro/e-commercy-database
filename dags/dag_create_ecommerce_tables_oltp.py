@@ -49,7 +49,7 @@ class Category(Base):
     name = Column(String(50), nullable=False)
     created_at = Column(
         TIMESTAMP, nullable=False, server_default=func.current_timestamp()
-    )    
+    )
     CheckConstraint(category_constraint_sql, name="check_category_values"),
 
 
@@ -62,6 +62,7 @@ class Items(Base):
         TIMESTAMP, nullable=False, server_default=func.current_timestamp()
     )
 
+
 class Size(Base):
     __tablename__ = "sizes"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -71,6 +72,7 @@ class Size(Base):
         TIMESTAMP, nullable=False, server_default=func.current_timestamp()
     )
 
+
 class Items_sizes(Base):
     __tablename__ = "items_sizes"
     item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
@@ -78,6 +80,7 @@ class Items_sizes(Base):
     created_at = Column(
         TIMESTAMP, nullable=False, server_default=func.current_timestamp()
     )
+
 
 class Prices(Base):
     __tablename__ = "prices"
@@ -149,6 +152,7 @@ class StoresAddresses(Base):
         TIMESTAMP, nullable=False, server_default=func.current_timestamp()
     )
 
+
 class Customers(Base):
     __tablename__ = "customers"
     customer_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -183,6 +187,7 @@ class CustomersAddresses(Base):
     created_at = Column(
         TIMESTAMP, nullable=False, server_default=func.current_timestamp()
     )
+
 
 class Phones(Base):
     __tablename__ = "phones"
