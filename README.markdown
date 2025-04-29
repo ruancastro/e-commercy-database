@@ -215,8 +215,8 @@ The project is containerized using **Docker** and **Docker Compose**:
    - Clone the repository:
 
      ```
-     git clone <repository_url>
-     cd ECOMMERCY-DATABASE
+     git clone https://github.com/ruancastro/e-commercy-database.git
+     cd e-commercy-database
      ```
 
    - Install dependencies (if not using Docker):
@@ -227,10 +227,13 @@ The project is containerized using **Docker** and **Docker Compose**:
 
    - Update the database credentials in `OLTP_URL` and `OLAP_URL` in the DAG files (e.g., `dag_initial_load_olap.py`).
 
-3. **Run with Docker**:
+3. **Run with Docker** (Recommended):
 
    - Start the services:
-
+     ```
+     docker-compose up airflow-init -d
+     ```
+     
      ```
      docker-compose up -d
      ```
@@ -506,8 +509,8 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
    - Clone o repositório:
 
      ```
-     git clone <url_do_repositorio>
-     cd ECOMMERCY-DATABASE
+     git clone https://github.com/ruancastro/e-commercy-database.git
+     cd e-commercy-database
      ```
 
    - Instale as dependências (se não usar Docker):
@@ -518,10 +521,14 @@ O projeto é conteinerizado usando **Docker** e **Docker Compose**:
 
    - Atualize as credenciais do banco em `OLTP_URL` e `OLAP_URL` nos arquivos das DAGs (ex.: `dag_initial_load_olap.py`).
 
-3. **Executar com Docker**:
+3. **Executar com Docker** (Recomendado):
 
    - Inicie os serviços:
 
+     ```
+     docker-compose up airflow-init -d
+     ```
+     
      ```
      docker-compose up -d
      ```
