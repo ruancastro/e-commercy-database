@@ -3,15 +3,14 @@ import random
 
 def generate_brazilian_address_complement():
     """
-    Gera um complemento de endereço aleatório no formato brasileiro ou None.
+    Generates a random address complement in Brazilian format or None.
 
-    Esta função simula a geração de um complemento de endereço comum em endereços brasileiros.
-    Há 30% de chance de não haver complemento (retorna None). Se houver complemento,
-    há 50% de chance de ser um complemento com tipo (ex.: "Apto 101") e 50% de chance
-    de ser apenas um número (ex.: "101").
+    This function simulates the generation of a typical address complement found in Brazilian addresses.
+    There is a 30% chance that there will be no complement (returns None). If a complement is present,
+    there is a 50% chance it will include a type (e.g., "Apto 101") and a 50% chance it will be just a number (e.g., "101").
 
-    Retorna:
-        str ou None: Uma string representando o complemento do endereço ou None se não houver complemento.
+    Returns:
+        str or None: A string representing the address complement, or None if no complement is generated.
     """
     if random.random() <= 0.4:
         return None

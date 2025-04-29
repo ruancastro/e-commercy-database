@@ -326,14 +326,12 @@ class ETLInitial(ETLBase):
             "fact_inventory",
         ]
 
-        # Passo 1: Exclui e recria as tabelas
         Base.metadata.drop_all(self.olap_engine)
         print("All existing tables dropped successfully with CASCADE.")
 
         Base.metadata.create_all(self.olap_engine)
         print("OLAP schema recreated successfully.")
 
-        # Passo 2: Carrega os dados
         for table_name in load_order:
             df = transformed_data.get(table_name)
             if df is not None and not df.empty:
@@ -355,8 +353,6 @@ class ETLInitial(ETLBase):
             session.execute(f"SELECT setval('dim_time_date_id_seq', {max_date_id + 1})")
             print(f"dim_time_date_id_seq sequence adjusted to {max_date_id + 1}")
 
-            # Synchronize other sequences, if necessary
-            # dim_customers.customer_id
             max_customer_id = session.execute(
                 "SELECT MAX(customer_id) FROM dim_customers"
             ).scalar()
