@@ -291,7 +291,7 @@ class EcommerceManager:
 with DAG(
     dag_id="register_purchases_and_clients",
     start_date=datetime(2025, 4, 2),
-    schedule_interval=timedelta(minutes=1),
+    schedule_interval=timedelta(minutes=5),
     catchup=False,
 ) as dag:
 
